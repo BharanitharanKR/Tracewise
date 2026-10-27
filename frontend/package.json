@@ -58,7 +58,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@hookform/resolvers": "^5.2.1",
+    "@hookform/resolvers": "^6.0.0",
     "@lezer/highlight": "^1.2.1",
     "@lmnr-ai/lmnr": "^0.8.45",
     "@mux/mux-player-react": "^3.5.3",
