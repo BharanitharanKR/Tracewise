@@ -10,7 +10,7 @@ import { db } from "@/lib/db/drizzle";
 import { membersOfWorkspaces, users, workspaces } from "@/lib/db/migrations/schema";
 
 export const metadata: Metadata = {
-  title: "Workspace on Free plan - Laminar",
+  title: "Workspace on Free plan",
 };
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -375,7 +375,7 @@ async fn resolve_llm_route(
         (None, None) => return Ok(None),
         _ if !profiles_enabled => {
             return Err(CrudError::Validation(
-                "Signals run on Laminar's own keys on Laminar Cloud; llmProfileId and model are not accepted".to_string(),
+                "Signals run on Tracewise's own keys on Tracewise Cloud; llmProfileId and model are not accepted".to_string(),
             ));
         }
         (Some(profile_id), Some(model)) => (profile_id, model),

@@ -58,7 +58,7 @@ export default function WorkspaceStep({ stepIndex, totalSteps, isCloud = false, 
     <StepShell
       stepIndex={stepIndex}
       totalSteps={totalSteps}
-      title="Welcome to Laminar"
+      title="Welcome to Tracewise"
       description={
         <>
           Let&apos;s start by creating your first workspace and project.{" "}

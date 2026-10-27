@@ -72,7 +72,7 @@ export default function TracesPagePlaceholder() {
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-medium">Works with your stack</h3>
-              <p className="text-sm text-muted-foreground">Laminar integrates with the frameworks and SDKs you use</p>
+              <p className="text-sm text-muted-foreground">Tracewise integrates with the frameworks and SDKs you use</p>
             </div>
             <FrameworksGrid />
           </div>

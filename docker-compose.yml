@@ -3,7 +3,7 @@
 # It does not include RabbitMQ.
 # It only includes frontend, clickhouse, postgres, and app-server.
 
-name: lmnr
+name: tracewise
 
 services:
   postgres:
@@ -67,8 +67,10 @@ services:
       retries: 3
 
   frontend:
-    image: ghcr.io/lmnr-ai/frontend
-    pull_policy: always
+    # Built from source so the Tracewise branding is included (the upstream
+    # ghcr.io/lmnr-ai/frontend image ships Laminar branding).
+    build:
+      context: ./frontend
     ports:
       - "${FRONTEND_HOST_PORT:-5667}:5667"
     depends_on:
@@ -86,7 +88,7 @@ services:
       NEXTAUTH_SECRET: some_secret
       NEXT_PUBLIC_URL: http://localhost:5667
       ENVIRONMENT: LITE # this disables some runtime dependencies
-      LAMINAR_TELEMETRY_DISABLED: "${LAMINAR_TELEMETRY_DISABLED:-false}"
+      LAMINAR_TELEMETRY_DISABLED: "${LAMINAR_TELEMETRY_DISABLED:-true}"
       CLICKHOUSE_URL: http://clickhouse:8123
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}

@@ -12,8 +12,8 @@ import {
 import { getServerSession } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
-  title: "Authorize CLI - Laminar",
-  description: "Authorize the Laminar CLI to access your account.",
+  title: "Authorize CLI",
+  description: "Authorize the CLI to access your Tracewise account.",
 };
 
 interface DevicePageProps {

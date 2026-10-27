@@ -23,8 +23,8 @@ export default function WelcomeEmail({ trial }: WelcomeEmailProps = {}) {
       </Head>
       <Preview>
         {trial
-          ? `Welcome to Laminar. Your Starter trial runs until ${trial.endsOn}.`
-          : "Welcome to Laminar - observability purpose-built for AI agents"}
+          ? `Welcome to Tracewise. Your Starter trial runs until ${trial.endsOn}.`
+          : "Welcome to Tracewise - observability purpose-built for AI agents"}
       </Preview>
       <div className="welcome-page" style={page}>
         <div className="welcome-shell" style={shell}>
@@ -32,14 +32,14 @@ export default function WelcomeEmail({ trial }: WelcomeEmailProps = {}) {
             <tbody>
               <tr>
                 <td style={banner}>
-                  <Img src={`cid:${LAMINAR_LOGO_CID}`} alt="Laminar" width="76" height="13" style={logo} />
-                  <Text style={heading}>Welcome to Laminar!</Text>
+                  <Img src={`cid:${LAMINAR_LOGO_CID}`} alt="Tracewise" width="96" height="13" style={logo} />
+                  <Text style={heading}>Welcome to Tracewise!</Text>
                 </td>
               </tr>
             </tbody>
           </table>
           <Section className="welcome-card" style={card}>
-            <Text style={greeting}>Hey there, it{"'"}s Robert from Laminar. Excited for you to try it out!</Text>
+            <Text style={greeting}>Hey there, welcome aboard! We{"'"}re excited for you to try Tracewise.</Text>
             {trial && (
               <Section style={trialNote}>
                 <Text style={trialNoteTitle}>Your free 14-day Starter trial is on</Text>
@@ -63,10 +63,10 @@ export default function WelcomeEmail({ trial }: WelcomeEmailProps = {}) {
               </Section>
             )}
             <Text style={intro}>
-              Laminar is an open-source observability platform purpose-built for AI agents.
+              Tracewise is an open-source observability platform purpose-built for AI agents.
               <br />
               <br />
-              Here{"'"}s what you can do with Laminar:
+              Here{"'"}s what you can do with Tracewise:
             </Text>
             <table role="presentation" cellPadding="0" cellSpacing="0" style={bulletList}>
               <tbody>
@@ -107,7 +107,7 @@ export default function WelcomeEmail({ trial }: WelcomeEmailProps = {}) {
                       MCP
                     </Link>
                     {
-                      " — give your coding agents full SQL access to Laminar so they can investigate traces, build evals, and verify fixes."
+                      " — give your coding agents full SQL access to Tracewise so they can investigate traces, build evals, and verify fixes."
                     }
                   </td>
                 </tr>
@@ -126,26 +126,20 @@ export default function WelcomeEmail({ trial }: WelcomeEmailProps = {}) {
               Get started in one prompt
             </Link>
             <Text style={closing}>
-              Laminar is fully open source. Don{"'"}t forget to star our{" "}
-              <Link style={link} href="https://github.com/lmnr-ai/lmnr" target="_blank">
+              Tracewise is fully open source. Don{"'"}t forget to star our{" "}
+              <Link style={link} href="https://github.com/BharanitharanKR/Tracewise" target="_blank">
                 repo on GitHub
               </Link>
               !
               <br />
               <br />
-              Got questions or need help with setup? Just{" "}
-              <Link style={link} href="https://cal.com/robert-lmnr/demo" target="_blank">
-                grab a slot on my calendar
-              </Link>
-              .
+              Got questions or need help with setup? Just reply to this email.
               <br />
               <br />
               Happy building!
               <br />
               <br />
-              Robert,
-              <br />
-              Co-founder & CEO @ Laminar
+              The Tracewise team
             </Text>
           </Section>
         </div>
@@ -164,7 +158,7 @@ const banner: CSSProperties = {
   borderRadius: "8px",
   backgroundColor: "#252526",
 };
-const logo: CSSProperties = { display: "block", width: "76px", height: "13px" };
+const logo: CSSProperties = { display: "block", width: "96px", height: "13px" };
 const heading: CSSProperties = {
   margin: "73px 0 0",
   color: "#ffffff",

@@ -57,8 +57,8 @@ export function ReportEmailLayout({
               <table cellPadding="0" cellSpacing="0" role="presentation">
                 <tbody>
                   <tr style={{ height: "15px" }}>
-                    <td style={{ width: "76px", height: "15px", verticalAlign: "middle", lineHeight: 0 }}>
-                      <Img src={LOGO_URL} alt="Laminar" width="76" height="13" style={{ display: "block" }} />
+                    <td style={{ width: "96px", height: "15px", verticalAlign: "middle", lineHeight: 0 }}>
+                      <Img src={LOGO_URL} alt="Tracewise" width="96" height="13" style={{ display: "block" }} />
                     </td>
                     <td style={{ width: "8px" }} />
                     <td style={{ ...identity, verticalAlign: "middle" }}>/</td>

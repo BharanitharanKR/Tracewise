@@ -6,7 +6,7 @@ import { getWorkspaceSettingsPath } from "@/lib/actions/projects";
 import { getServerSession } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
-  title: "Add payment method - Laminar",
+  title: "Add payment method",
   description: "Redirecting to Stripe to add a payment method.",
 };
 

@@ -1,0 +1,10 @@
+Tracewise
+Copyright 2026 BharanitharanKR (https://github.com/BharanitharanKR)
+
+This product is derived from Laminar (https://github.com/lmnr-ai/lmnr),
+Copyright 2024 LMNR AI, Inc., licensed under the Apache License, Version 2.0.
+Imported from upstream commit ae5c7d1a271d3b511d023b3cc7436083c74eaa1b.
+
+Modifications in Tracewise include product renaming, new logo and brand
+assets, and configuration changes. "Laminar" is a name of LMNR AI, Inc.;
+it is used here only to identify the upstream project and its SDKs.

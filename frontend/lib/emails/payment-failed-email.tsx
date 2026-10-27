@@ -19,7 +19,7 @@ export default function PaymentFailedEmail({
   return (
     <ReportEmailLayout
       preview="Payment failed — action required."
-      workspace="Laminar"
+      workspace="Tracewise"
       title="Payment failed"
       theme={theme}
     >

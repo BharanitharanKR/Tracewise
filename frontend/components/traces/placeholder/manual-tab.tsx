@@ -19,7 +19,7 @@ export function ManualTab({ projectId }: { projectId?: string }) {
   return (
     <div className="flex flex-col gap-12 ">
       <div className="flex flex-col gap-3 items-start">
-        <h3 className="text-base font-medium">Install Laminar SDK</h3>
+        <h3 className="text-base font-medium">Install the SDK</h3>
         <InstallTabsSection />
       </div>
 
@@ -27,7 +27,7 @@ export function ManualTab({ projectId }: { projectId?: string }) {
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h3 className="text-base font-medium">Initialize Laminar</h3>
+          <h3 className="text-base font-medium">Initialize the SDK</h3>
           <p className="text-sm text-muted-foreground">Add 2 lines of code at the top of your project.</p>
         </div>
         <InitializationTabsSection />

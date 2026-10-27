@@ -230,7 +230,7 @@ const WorkspaceDeployment = ({ workspace }: WorkspaceDeploymentProps) => {
           <ModeCard
             icon={<Cloud className="h-5 w-5" />}
             title="Cloud"
-            description="Data stored securely in Laminar cloud."
+            description="Data stored securely in Tracewise cloud."
             isSelected={mode === DeploymentType.CLOUD}
             isActive={data?.mode === DeploymentType.CLOUD}
             disabled={isSaving || !isEnabled}
@@ -239,7 +239,7 @@ const WorkspaceDeployment = ({ workspace }: WorkspaceDeploymentProps) => {
           <ModeCard
             icon={<Server className="h-5 w-5" />}
             title="Hybrid"
-            description="Data stored securely in your infrastructure. Laminar handles processing only."
+            description="Data stored securely in your infrastructure. Tracewise handles processing only."
             isSelected={mode === DeploymentType.HYBRID}
             isActive={data?.mode === DeploymentType.HYBRID}
             disabled={isSaving || !isEnabled}
@@ -292,7 +292,7 @@ const WorkspaceDeployment = ({ workspace }: WorkspaceDeploymentProps) => {
                   <>
                     <p>
                       Switching to <strong>Cloud</strong> means all new data will be written to and read from
-                      Laminar&apos;s managed infrastructure.
+                      Tracewise&apos;s managed infrastructure.
                     </p>
                   </>
                 )}

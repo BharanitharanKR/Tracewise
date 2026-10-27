@@ -11,15 +11,15 @@ import { type FeatureFlags, FeatureFlagsProvider } from "@/contexts/feature-flag
 import { getServerSession } from "@/lib/auth-session";
 import { Feature, isFeatureEnabled } from "@/lib/features/features.ts";
 import { manrope, sans, sansLanding } from "@/lib/fonts";
-import { description, ogImage, title } from "@/lib/metadata";
+import { description, ogImage, siteUrl, title } from "@/lib/metadata";
 import { PostHogProvider } from "@/lib/posthog";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://laminar.sh"),
+  metadataBase: new URL(siteUrl),
   title: {
     default: title,
-    template: "%s | Laminar",
+    template: "%s | Tracewise",
   },
   description,
   // Orange icon in dev so a local tab is distinguishable from a prod one.
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     icon: process.env.NODE_ENV === "development" ? "/favicon-dev.png" : "/favicon.ico",
   },
   keywords: [
-    "laminar",
+    "tracewise",
     "evals",
     "label",
     "analyze",
@@ -55,8 +55,8 @@ export const metadata: Metadata = {
     type: "website",
     title,
     description,
-    siteName: "Laminar",
-    url: "https://laminar.sh",
+    siteName: "Tracewise",
+    url: siteUrl,
     images: [ogImage],
   },
   twitter: {

@@ -27,7 +27,7 @@ export default function EvalsPagePlaceholder() {
               Measure your agent{"'"}s performance with evaluations. Check regressions and iterate with confidence.
             </p>
             <p className="text-muted-foreground leading-6">
-              You define the inputs, the function that produces the output, and a function to score it. Laminar runs
+              You define the inputs, the function that produces the output, and a function to score it. Tracewise runs
               them in parallel, traces every call, and tracks scores across runs.
             </p>
           </div>

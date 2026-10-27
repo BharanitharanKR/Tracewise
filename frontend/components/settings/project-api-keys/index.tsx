@@ -93,7 +93,7 @@ export default function ProjectApiKeys({ apiKeys }: ApiKeysProps) {
     <SettingsSection>
       <SettingsSectionHeader
         title="Project API keys"
-        description="Create a Laminar API key to send traces from your AI application. These keys are tied to the project."
+        description="Create a Tracewise API key to send traces from your AI application. These keys are tied to the project."
       />
       <Dialog
         open={isGenerateKeyDialogOpen}

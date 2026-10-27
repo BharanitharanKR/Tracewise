@@ -1,13 +1,13 @@
 // Self-contained prompt the user copies into their own AI tool to generate a
-// Laminar render template. Three things only: how to style it (Laminar tokens),
+// Tracewise render template. Three things only: how to style it (Tracewise tokens),
 // what code shape to return (function({ data }) JSX), and a slot for the
 // user's data + request.
 
 const STYLE_GUIDE = `<laminar_ui_style_guide>
-Laminar uses Tailwind CSS with a dark-first palette and small, dense, monospace-leaning UI.
+Tracewise uses Tailwind CSS with a dark-first palette and small, dense, monospace-leaning UI.
 Generated templates render inside a sandboxed iframe whose Tailwind theme is wired up to
-Laminar's semantic design tokens. ALWAYS prefer these semantic classes over raw palette
-names — they automatically match the current Laminar theme. (Stock Tailwind classes like
+Tracewise's semantic design tokens. ALWAYS prefer these semantic classes over raw palette
+names — they automatically match the current Tracewise theme. (Stock Tailwind classes like
 \`text-sky-400\` or \`bg-neutral-900\` still work but will visually drift from the rest of
 the platform; avoid them.)
 
@@ -47,7 +47,7 @@ Text
 - Use ONLY Tailwind's named scale: \`text-xs\` (12px) and \`text-sm\` (14px) cover 99% of cases; \`text-base\` for emphasised values, \`text-lg\` only for hero numbers. NEVER write arbitrary pixel sizes like \`text-[10px]\` — they look broken next to the rest of the platform.
 
 Domain signal tokens — RESERVED for LLM / agent content. Do NOT use these for generic styling, decoration, or to introduce visual variety. Their meaning is structural; using them on unrelated content (e.g. a JSON key, a generic label, a metadata row) misleads the reader.
-- \`text-user\` / \`bg-user\` — ONLY for user / human input content (role: "user" chat messages, the user's prompt, trace "input" markers). This is the same blue Laminar uses to mark user input across the platform.
+- \`text-user\` / \`bg-user\` — ONLY for user / human input content (role: "user" chat messages, the user's prompt, trace "input" markers). This is the same blue Tracewise uses to mark user input across the platform.
 - \`text-llm\` / \`bg-llm\` — ONLY for assistant / model-generated content (a chat bubble with role: "assistant", an LLM-output span header). Never on user content, never on generic JSON.
 - \`text-tool\` / \`bg-tool\` — ONLY for tool / function-call content (role: "tool" messages, tool-call span headers, the name of the tool that ran).
 - \`text-subagent\` / \`bg-subagent\` — ONLY for nested agent / subagent identification (a span whose kind is "subagent", an agent-handoff marker).
@@ -68,7 +68,7 @@ DO NOT use \`bg-<accent>/15 text-<accent>\` either — same-hue text on tinted b
 
 Layout / density
 - Keep paddings tight: \`p-2\` / \`p-3\` on cards, \`gap-2\` / \`gap-3\` between rows
-- Avoid \`p-6\`, \`text-lg\`, \`rounded-xl\`, colourful gradients, glow shadows — they don't fit Laminar's compact UI
+- Avoid \`p-6\`, \`text-lg\`, \`rounded-xl\`, colourful gradients, glow shadows — they don't fit Tracewise's compact UI
 - Favour grids and aligned columns over hero layouts
 - No external images, icons, fonts, or fetched resources. Use Unicode glyphs (\`•\`, \`↗\`, \`✓\`, \`✕\`, \`→\`) when a marker is needed
 - Separators: \`border-t border-border\` (prefer whitespace over heavy dividers)
@@ -113,7 +113,7 @@ Hard rules:
 - Do NOT use \`import\`, \`require\`, \`eval\`, \`new Function\`, or top-level \`await\`.
 </output_contract>`;
 
-const INTRO = `You are generating a JSX template for Laminar, an open-source observability platform for AI agents. The template renders a JSON payload inside a sandboxed iframe using Preact + Tailwind, with Tailwind wired to Laminar's semantic design tokens.
+const INTRO = `You are generating a JSX template for Tracewise, an open-source observability platform for AI agents. The template renders a JSON payload inside a sandboxed iframe using Preact + Tailwind, with Tailwind wired to Tracewise's semantic design tokens.
 
 Read the style guide and output contract below, then produce ONE JSX template function for the data and request at the bottom. Reply with the function wrapped in a single \`\`\`jsx fenced code block and nothing else.`;
 
@@ -140,10 +140,10 @@ ${dataBlock}
 ${WHAT_TO_RENDER}`;
 };
 
-const TRACE_INTRO = `You are generating a render template for Laminar, an open-source observability platform for AI agents. A trace template has TWO parts:
+const TRACE_INTRO = `You are generating a render template for Tracewise, an open-source observability platform for AI agents. A trace template has TWO parts:
 
 1. A SQL WHERE fragment that selects which spans of a trace to render.
-2. A JSX template function that renders the selected spans inside a sandboxed iframe using Preact + Tailwind, with Tailwind wired to Laminar's semantic design tokens.
+2. A JSX template function that renders the selected spans inside a sandboxed iframe using Preact + Tailwind, with Tailwind wired to Tracewise's semantic design tokens.
 
 Read the span filter contract, style guide, and output contract below. The trace outline at the bottom shows one representative span per distinct (name, span_type) shape in a real trace, with long values truncated and an \`occurrences\` count for how many spans share that shape. Use it to decide which spans matter and what their input/output/attributes look like. Reply with exactly two fenced code blocks — \`\`\`sql then \`\`\`jsx — and nothing else.`;
 
@@ -247,7 +247,7 @@ ${TRACE_WHAT_TO_RENDER}`;
 // tool + gate contract (edit files in a virtual FS, validate before finishing).
 // ---------------------------------------------------------------------------
 
-const AGENT_INTRO = `You are an agent that authors a JSX render template for Laminar, an open-source observability platform for AI agents. The template renders a JSON payload inside a sandboxed iframe using Preact + Tailwind, with Tailwind wired to Laminar's semantic design tokens.
+const AGENT_INTRO = `You are an agent that authors a JSX render template for Tracewise, an open-source observability platform for AI agents. The template renders a JSON payload inside a sandboxed iframe using Preact + Tailwind, with Tailwind wired to Tracewise's semantic design tokens.
 
 You work by editing files in a virtual filesystem with the provided tools — you do NOT reply with the code in prose. When you are done, your final message is ignored; only the file contents are used.`;
 

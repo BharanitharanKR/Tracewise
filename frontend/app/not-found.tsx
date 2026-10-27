@@ -14,7 +14,7 @@ export default function NotFound() {
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="flex flex-col max-w-lg items-center justify-center gap-4 text-secondary-foreground">
         <Link href={"/projects"} className="flex h-10 mb-8 items-center justify-center">
-          <Image alt="Laminar icon" className="rounded-lg" src={icon} width={80} />
+          <Image alt="Tracewise icon" className="rounded-lg" src={icon} width={80} />
         </Link>
         <div className="space-y-2">
           <h1 className="text-6xl font-bold text-center text-foreground">404</h1>

@@ -149,8 +149,8 @@ ${currentQuery}
 When the user asks to modify, add to, or change the existing query, use this as the base and apply the requested changes.`
     : "";
 
-  const systemPrompt = `You are a SQL generator for Laminar, an open-source observability platform for LLM applications.
-Laminar uses ClickHouse as its analytics database.
+  const systemPrompt = `You are a SQL generator for Tracewise, an open-source observability platform for LLM applications.
+Tracewise uses ClickHouse as its analytics database.
 
 ${SHARED_RULES}
 

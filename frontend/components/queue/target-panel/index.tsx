@@ -143,8 +143,8 @@ function FieldsEmptyState({ onDefineSchema }: { onDefineSchema: () => void }) {
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium">Annotate with structured fields</span>
         <span className="text-xs text-secondary-foreground max-w-md">
-          Define a JSON schema (string, number, boolean, enum) and Laminar will render an interactive form here with 1–9
-          hotkey shortcuts for fast labelling.
+          Define a JSON schema (string, number, boolean, enum) and Tracewise will render an interactive form here with
+          1–9 hotkey shortcuts for fast labelling.
         </span>
       </div>
       <Button variant="secondary" onClick={onDefineSchema} className="mt-1">

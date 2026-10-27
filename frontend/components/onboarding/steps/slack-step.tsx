@@ -56,7 +56,7 @@ export default function SlackStep({ stepIndex, totalSteps, onAdvance, onBack }: 
       stepIndex={stepIndex}
       totalSteps={totalSteps}
       title="Get Slack alerts when your agent breaks"
-      description="Laminar can send Slack notifications (we send email alerts by default) when a critical Signal event is detected, and when new event clusters form. Connect now, or set it up later from workspace settings."
+      description="Tracewise can send Slack notifications (we send email alerts by default) when a critical Signal event is detected, and when new event clusters form. Connect now, or set it up later from workspace settings."
       nextLabel={slackConnected ? "Continue" : "Skip for now"}
       onNext={handleNext}
       onBack={onBack}

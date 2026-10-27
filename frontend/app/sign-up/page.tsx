@@ -6,8 +6,8 @@ import { getServerSession } from "@/lib/auth-session";
 import { sanitizeCallbackUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Sign Up - Laminar",
-  description: "Create a free Laminar account. Start tracing and evaluating your AI agents in minutes.",
+  title: "Sign Up",
+  description: "Create a free Tracewise account. Start tracing and evaluating your AI agents in minutes.",
 };
 
 export default async function SignUpPage(props: {

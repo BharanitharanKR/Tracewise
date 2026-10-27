@@ -3,8 +3,8 @@
 import { Book } from "lucide-react";
 import Link from "next/link";
 
-import laminarIcon from "@/assets/logo/icon.svg";
-import laminarWordmark from "@/assets/logo/laminar-wordmark.svg";
+import icon from "@/assets/logo/icon.svg";
+import wordmark from "@/assets/logo/wordmark.svg";
 import VersionBadge from "@/components/common/version-badge.tsx";
 import {
   SidebarFooter,
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils.ts";
 const SidebarFooterComponent = () => {
   const { open, openMobile } = useSidebar();
   const features = useFeatureFlags();
-  const logo = open || openMobile ? laminarWordmark : laminarIcon;
+  const logo = open || openMobile ? wordmark : icon;
 
   return (
     <SidebarFooter className="px-0">
@@ -46,7 +46,7 @@ const SidebarFooterComponent = () => {
               <Link passHref href="/projects" className="flex items-center">
                 {/* mask + bg tint: the SVGs are hard fill="white", so next/image can't be recolored */}
                 <span
-                  aria-label="Laminar"
+                  aria-label="Tracewise"
                   className={cn("block bg-secondary-foreground/30", open || openMobile ? "w-30" : "w-[35px]")}
                   style={{
                     maskImage: `url(${logo.src})`,

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import logo from "@/assets/logo/laminar-wordmark.svg";
+import logo from "@/assets/logo/wordmark.svg";
 import { cn } from "@/lib/utils";
 
 import LandingButton from "../landing-button";

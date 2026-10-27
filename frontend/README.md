@@ -25,6 +25,6 @@ Run
 
 ## Anonymous usage telemetry
 
-Self-hosted deployments collect anonymized usage telemetry. To opt out, set `LAMINAR_TELEMETRY_DISABLED=true` in your `.env`.
+The upstream anonymous usage heartbeat (sent to Laminar's analytics) is off by default in Tracewise. It only runs when `LAMINAR_TELEMETRY_DISABLED=false` is set explicitly.
 
 For Docker Compose, set the variable in the repository-root `.env`; the Compose stacks pass it to the frontend container. For manual frontend development, set it in `frontend/.env.local`. Helm deployments can set it with `frontend.extraEnv`.

@@ -108,7 +108,7 @@ export default function PrivacyMode({ workspace, isOwner }: PrivacyModeProps) {
             <DialogTitle>Turn off Privacy Mode?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Allow Laminar to use redacted Signal run data from this workspace to improve the Signals models. Trace
+            Allow Tracewise to use redacted Signal run data from this workspace to improve the Signals models. Trace
             content processed by Signals is included after PII redaction. You can turn Privacy Mode back on at any time,
             which stops future use; data already used in completed training runs cannot be removed from those models.
           </p>

@@ -15,7 +15,7 @@ export default function WorkspaceInviteEmail({
       <Head>
         <style>{`@media screen and (max-width:720px) { .invite-page { padding:0 !important; } .invite-shell { width:100% !important; } .invite-card, .invite-banner { border-radius:0 !important; } }`}</style>
       </Head>
-      <Preview>{`You've been invited to join ${workspaceName} on Laminar`}</Preview>
+      <Preview>{`You've been invited to join ${workspaceName} on Tracewise`}</Preview>
       <div className="invite-page" style={page}>
         <div className="invite-shell" style={shell}>
           <table className="invite-banner" role="presentation" cellPadding="0" cellSpacing="0" style={bannerTable}>
@@ -26,21 +26,21 @@ export default function WorkspaceInviteEmail({
                     <tbody>
                       <tr>
                         <td style={{ lineHeight: 0 }}>
-                          <Img src={`cid:${LAMINAR_LOGO_CID}`} alt="Laminar" width="76" height="13" style={logo} />
+                          <Img src={`cid:${LAMINAR_LOGO_CID}`} alt="Tracewise" width="96" height="13" style={logo} />
                         </td>
                         <td style={identity}>/</td>
                         <td style={identity}>{workspaceName}</td>
                       </tr>
                     </tbody>
                   </table>
-                  <Text style={heading}>Join {workspaceName} on Laminar!</Text>
+                  <Text style={heading}>Join {workspaceName} on Tracewise!</Text>
                 </td>
               </tr>
             </tbody>
           </table>
           <Section className="invite-card" style={card}>
             <Text style={intro}>
-              You&apos;ve been invited to join {workspaceName} on Laminar! This invitation will expire in 7 days.
+              You&apos;ve been invited to join {workspaceName} on Tracewise! This invitation will expire in 7 days.
             </Text>
             <Link style={action} href={inviteLink} target="_blank">
               Accept invitation
@@ -73,7 +73,7 @@ const banner: CSSProperties = {
   borderRadius: "8px",
   backgroundColor: "#252526",
 };
-const logo: CSSProperties = { display: "block", width: "76px", height: "13px" };
+const logo: CSSProperties = { display: "block", width: "96px", height: "13px" };
 const identity: CSSProperties = {
   paddingLeft: "8px",
   color: "#c3c4c8",

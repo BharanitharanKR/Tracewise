@@ -13,7 +13,7 @@ export const COMPRESSED_OPACITY = 0.3;
 export const COMPRESSED_LABEL = "Compressed";
 const COMPRESSION_BLOG_URL = "https://laminar.sh/blog/laminar-20x-agent-trace-compression";
 export const COMPRESSION_NOTE = {
-  text: "Agents resend their message history on every LLM call. Laminar stores it only once.",
+  text: "Agents resend their message history on every LLM call. Tracewise stores it only once.",
   href: COMPRESSION_BLOG_URL,
 };
 

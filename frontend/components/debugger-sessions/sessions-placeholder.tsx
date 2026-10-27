@@ -37,7 +37,7 @@ export default function SessionsPlaceholder() {
           <div className="flex flex-col gap-4">
             <h1 className="text-2xl font-medium">Get started with Debugger</h1>
             <p className="text-muted-foreground leading-6">
-              With Laminar CLI your coding agent can run your AI agent, inspect the trace of the run, modify your agent,
+              With the CLI, your coding agent can run your AI agent, inspect the trace of the run, modify your agent,
               and run again with cached state – fully owning the iteration loop.
             </p>
             <p className="text-muted-foreground leading-6">

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import laminarLogo from "@/assets/logo/laminar-wordmark.svg";
+import laminarLogo from "@/assets/logo/wordmark.svg";
 import { cn } from "@/lib/utils";
 
 import { LANDING_COLUMN_MAX_W } from "../class-names";

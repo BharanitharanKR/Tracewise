@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { type FormEvent, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { LaminarLogo } from "@/components/ui/icons";
+import { TracewiseLogo } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { track } from "@/lib/posthog";
@@ -65,8 +65,8 @@ export default function CreateFirstWorkspaceAndProject({ name }: CreateFirstWork
     <div className="flex-1 flex items-center justify-center">
       <div className="w-full max-w-lg border bg-secondary rounded-lg shadow-md overflow-hidden m-8">
         <div className="flex flex-col gap-1.5 px-8 pt-8 pb-6">
-          <LaminarLogo className="h-7 w-auto mb-3" fill="#b5b5b5" />
-          <h1 className="text-lg font-semibold text-secondary-foreground">Welcome to Laminar</h1>
+          <TracewiseLogo className="h-7 w-auto mb-3" fill="#b5b5b5" />
+          <h1 className="text-lg font-semibold text-secondary-foreground">Welcome to Tracewise</h1>
           <p className="text-sm text-muted-foreground">
             Create your workspace and first project to start monitoring your AI agents.
           </p>
@@ -101,7 +101,7 @@ export default function CreateFirstWorkspaceAndProject({ name }: CreateFirstWork
           </div>
 
           <div className="rounded-lg bg-muted/40 border border-border px-4 py-4">
-            <p className="text-sm font-medium text-secondary-foreground mb-3">Laminar will automatically set up</p>
+            <p className="text-sm font-medium text-secondary-foreground mb-3">Tracewise will automatically set up</p>
             <div className="flex flex-col gap-3">
               <div className="flex items-start gap-3">
                 <Radio className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />

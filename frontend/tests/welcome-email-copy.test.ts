@@ -9,9 +9,9 @@ import WelcomeEmail from "@/lib/emails/welcome-email";
 it("uses the new welcome introduction and tracing pitch without changing the other features", () => {
   const html = renderToStaticMarkup(createElement(WelcomeEmail));
 
-  assert.match(html, /Hey there, it&#x27;s Robert from Laminar\. Excited for you to try it out!/);
-  assert.match(html, /Laminar is an open-source observability platform purpose-built for AI agents\./);
-  assert.match(html, /Here&#x27;s what you can do with Laminar:/);
+  assert.match(html, /Hey there, welcome aboard! We&#x27;re excited for you to try Tracewise\./);
+  assert.match(html, /Tracewise is an open-source observability platform purpose-built for AI agents\./);
+  assert.match(html, /Here&#x27;s what you can do with Tracewise:/);
   assert.match(html, /Trace your agents/);
   assert.match(html, /capture every LLM call and tool invocation\. Set up tracing for your agent with a/);
   assert.match(html, /single prompt/);

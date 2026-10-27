@@ -112,7 +112,7 @@ export default function SlackChannelProjects({ workspaceId, className }: SlackCh
       <div>
         <p className="text-sm font-medium">Connect your Slack channels to projects</p>
         <p className="text-xs text-muted-foreground">
-          Mentioning @Laminar in a connected channel will answer questions about the connected project.
+          Mentioning @Tracewise in a connected channel will answer questions about the connected project.
         </p>
       </div>
 

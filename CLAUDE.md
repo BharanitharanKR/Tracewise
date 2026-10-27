@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Laminar is an open-source observability platform for AI agents: OpenTelemetry-native tracing, evaluations, AI monitoring, and SQL access to all data.
+Tracewise is an open-source observability platform for AI agents, forked from Laminar (lmnr-ai/lmnr). User-facing copy says "Tracewise"; SDK/protocol identifiers (`@lmnr-ai/lmnr`, `lmnr.span.*`, `LMNR_*`, `x-lmnr-*`, `LAMINAR_CLOUD`) keep upstream names for SDK compatibility. It provides OpenTelemetry-native tracing, evaluations, AI monitoring, and SQL access to all data.
 
 ## Repository Structure
 

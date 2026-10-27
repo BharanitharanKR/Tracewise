@@ -18,8 +18,8 @@ export default function SubscriptionUpdatedEmail({
 }: SubscriptionUpdatedEmailProps) {
   return (
     <ReportEmailLayout
-      preview="Payment received — thanks for using Laminar."
-      workspace="Laminar"
+      preview="Payment received — thanks for using Tracewise."
+      workspace="Tracewise"
       title="Payment received"
       theme={theme}
     >

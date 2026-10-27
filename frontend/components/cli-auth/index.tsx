@@ -59,9 +59,7 @@ function CodeEntryForm({ userEmail }: { userEmail: string }) {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Authorize a device</CardTitle>
-          <CardDescription>
-            Enter the code shown by the Laminar CLI to authorize this device for {userEmail}.
-          </CardDescription>
+          <CardDescription>Enter the code shown by the CLI to authorize this device for {userEmail}.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">

@@ -8,8 +8,8 @@ import { getWorkspaceSettingsPath } from "@/lib/actions/projects";
 import { getServerSession } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
-  title: "Checkout - Laminar",
-  description: "Complete your Laminar subscription.",
+  title: "Checkout",
+  description: "Complete your Tracewise subscription.",
 };
 
 export default async function CheckoutPage(props: {

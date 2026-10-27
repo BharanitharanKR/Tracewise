@@ -77,7 +77,7 @@ const llmRouteIsAllowed = (v: { llmProfileId?: string }) =>
 
 const LLM_PROFILE_PAIR_ERROR = { message: "Select both an LLM profile and a model", path: ["llmModel"] };
 const LLM_PROFILE_CLOUD_ERROR = {
-  message: "Signals run on Laminar's own keys on Laminar Cloud",
+  message: "Signals run on Tracewise's own keys on Tracewise Cloud",
   path: ["llmProfileId"],
 };
 

@@ -6,8 +6,8 @@ import { getServerSession } from "@/lib/auth-session";
 import { sanitizeCallbackUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Sign In - Laminar",
-  description: "Sign in to your Laminar account.",
+  title: "Sign In",
+  description: "Sign in to your Tracewise account.",
 };
 
 export default async function SignInPage(props: {

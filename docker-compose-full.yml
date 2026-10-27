@@ -2,7 +2,7 @@
 # This is the best and fastest for self-hosting, as the images are already built and ready to go.
 # If you want to build images locally, you can use the docker-compose-local-build.yml file instead.
 
-name: lmnr
+name: tracewise
 
 services:
   rabbitmq:
@@ -127,10 +127,12 @@ services:
       REDIS_URL: ${REDIS_URL}
 
   frontend:
-    image: ghcr.io/lmnr-ai/frontend
+    # Built from source so the Tracewise branding is included (the upstream
+    # ghcr.io/lmnr-ai/frontend image ships Laminar branding).
+    build:
+      context: ./frontend
     ports:
       - "${FRONTEND_HOST_PORT:-5667}:5667"
-    pull_policy: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -150,7 +152,7 @@ services:
       NEXTAUTH_SECRET: some_secret
       NEXT_PUBLIC_URL: http://localhost:5667
       ENVIRONMENT: FULL
-      LAMINAR_TELEMETRY_DISABLED: "${LAMINAR_TELEMETRY_DISABLED:-false}"
+      LAMINAR_TELEMETRY_DISABLED: "${LAMINAR_TELEMETRY_DISABLED:-true}"
       CLICKHOUSE_URL: http://clickhouse:8123
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}

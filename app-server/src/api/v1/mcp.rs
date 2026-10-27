@@ -70,7 +70,7 @@ pub struct AskAgentParams {
 /// One-line lead for the `query_laminar_sql` tool description; the schema block is shared with the
 /// Platform Agent prompt (`query_engine::schema`), the extras below are MCP-only.
 const MCP_SQL_INTRO: &str = "Execute a read-only SQL query (full ClickHouse SELECT syntax) against \
-this project's Laminar trace data and get rows back as a JSON array. Queries are automatically \
+this project's Tracewise trace data and get rows back as a JSON array. Queries are automatically \
 scoped to your project — never filter on or reference a `project_id` column. Only SELECT is allowed.";
 
 /// MCP-only suffix (joins + parameter note + examples) appended after the shared schema block. Kept
@@ -464,7 +464,7 @@ impl LaminarMcpServer {
 impl ServerHandler for LaminarMcpServer {
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new("laminar", env!("CARGO_PKG_VERSION")))
+            .with_server_info(Implementation::new("tracewise", env!("CARGO_PKG_VERSION")))
     }
 }
 

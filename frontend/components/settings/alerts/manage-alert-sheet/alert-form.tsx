@@ -598,7 +598,7 @@ export function AlertForm({
                                   </TooltipTrigger>
                                   <TooltipContent side="right" className="max-w-72">
                                     <p>
-                                      Laminar assigns a severity (info, warning, or critical) to every event when the
+                                      Tracewise assigns a severity (info, warning, or critical) to every event when the
                                       signal detects it. This alert only fires for the severities you select here.
                                     </p>
                                   </TooltipContent>

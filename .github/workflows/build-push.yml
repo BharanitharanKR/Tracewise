@@ -1,4 +1,4 @@
-name: Build & publish lmnr images
+name: Build & publish Tracewise images
 on:
   release:
     types:
@@ -16,21 +16,21 @@ jobs:
         include:
           - dockerfile: ./app-server/Dockerfile
             context: ./app-server
-            image: ghcr.io/lmnr-ai/app-server
+            image: ghcr.io/bharanitharankr/tracewise-app-server
             image-name: app-server
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
           - dockerfile: ./app-server/Dockerfile
             context: ./app-server
-            image: ghcr.io/lmnr-ai/app-server
+            image: ghcr.io/bharanitharankr/tracewise-app-server
             image-name: app-server
             arch: arm64
             platform: linux/arm64
             runner: ubuntu-24.04-arm
           - dockerfile: ./frontend/Dockerfile
             context: ./frontend
-            image: ghcr.io/lmnr-ai/frontend
+            image: ghcr.io/bharanitharankr/tracewise-frontend
             image-name: frontend
             arch: amd64
             platform: linux/amd64
@@ -40,7 +40,7 @@ jobs:
               NEXT_DEPLOYMENT_ID=${{ github.sha }}
           - dockerfile: ./frontend/Dockerfile
             context: ./frontend
-            image: ghcr.io/lmnr-ai/frontend
+            image: ghcr.io/bharanitharankr/tracewise-frontend
             image-name: frontend
             arch: arm64
             platform: linux/arm64
@@ -106,9 +106,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ghcr.io/lmnr-ai/app-server
+          - image: ghcr.io/bharanitharankr/tracewise-app-server
             image-name: app-server
-          - image: ghcr.io/lmnr-ai/frontend
+          - image: ghcr.io/bharanitharankr/tracewise-frontend
             image-name: frontend
     permissions:
       contents: read

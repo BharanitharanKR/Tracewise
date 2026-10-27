@@ -16,9 +16,9 @@ use super::utils::{
 };
 use crate::reports::ReportData;
 
-const REPORT_FROM_EMAIL: &str = "Laminar <reports@mail.lmnr.ai>";
-const ALERT_FROM_EMAIL: &str = "Laminar <alerts@mail.lmnr.ai>";
-const USAGE_WARNING_FROM_EMAIL: &str = "Laminar <usage@mail.lmnr.ai>";
+const REPORT_FROM_EMAIL: &str = "Tracewise <reports@mail.lmnr.ai>";
+const ALERT_FROM_EMAIL: &str = "Tracewise <alerts@mail.lmnr.ai>";
+const USAGE_WARNING_FROM_EMAIL: &str = "Tracewise <usage@mail.lmnr.ai>";
 
 #[derive(Default)]
 pub struct EmailContent {
@@ -77,7 +77,7 @@ fn banner(workspace: &str, title: &str, subtitle: Option<&str>) -> String {
         })
         .unwrap_or_default();
     format!(
-        r#"<div style="background:#252525;background-image:linear-gradient(#252525,#252525);border-radius:8px;margin-bottom:12px"><table width="100%" height="{height}" cellpadding="0" cellspacing="0" role="presentation" style="height:{height}px"><tr height="{half}"><td valign="top" style="padding:16px 20px 0"><table cellpadding="0" cellspacing="0" role="presentation"><tr height="15"><td width="76" height="15" style="line-height:0"><img src="cid:{cid}" alt="Laminar" width="76" height="13" style="display:block;border:0"></td><td width="8"></td><td style="font-size:14px;font-weight:400;color:#bfc1c7"><div class="gmail-blend-screen"><div class="gmail-blend-difference">/</div></div></td><td width="8"></td><td style="font-size:14px;font-weight:400;color:#bfc1c7"><div class="gmail-blend-screen"><div class="gmail-blend-difference">{workspace}</div></div></td></tr></table></td></tr><tr height="{half}"><td valign="bottom" style="padding:0 20px {bottom}px"><div class="gmail-blend-screen"><div class="gmail-blend-difference"><p style="margin:0 0 2px;font-size:28px;font-weight:400;color:#fff;letter-spacing:-.56px">{title}</p></div></div>{subtitle_html}</td></tr></table></div>"#,
+        r#"<div style="background:#252525;background-image:linear-gradient(#252525,#252525);border-radius:8px;margin-bottom:12px"><table width="100%" height="{height}" cellpadding="0" cellspacing="0" role="presentation" style="height:{height}px"><tr height="{half}"><td valign="top" style="padding:16px 20px 0"><table cellpadding="0" cellspacing="0" role="presentation"><tr height="15"><td width="96" height="15" style="line-height:0"><img src="cid:{cid}" alt="Tracewise" width="96" height="13" style="display:block;border:0"></td><td width="8"></td><td style="font-size:14px;font-weight:400;color:#bfc1c7"><div class="gmail-blend-screen"><div class="gmail-blend-difference">/</div></div></td><td width="8"></td><td style="font-size:14px;font-weight:400;color:#bfc1c7"><div class="gmail-blend-screen"><div class="gmail-blend-difference">{workspace}</div></div></td></tr></table></td></tr><tr height="{half}"><td valign="bottom" style="padding:0 20px {bottom}px"><div class="gmail-blend-screen"><div class="gmail-blend-difference"><p style="margin:0 0 2px;font-size:28px;font-weight:400;color:#fff;letter-spacing:-.56px">{title}</p></div></div>{subtitle_html}</td></tr></table></div>"#,
         height = height,
         half = height / 2,
         bottom = bottom,
@@ -449,13 +449,13 @@ fn render_alert_email(
             "signal_settings",
         );
         format!(
-            r#"<div style="text-align:center;padding:16px 0;font-size:12px;color:#92949c;line-height:1.6"><p style="margin:0 0 12px">This alert was generated automatically by Laminar.<br>Manage alert preferences <a href="{}" style="color:#92949c">here</a>.</p><p style="margin:0">Influence which events are considered critical by adding additional<br>instructions to your signal's prompt in <a href="{}" style="color:#92949c">Signal settings</a>.</p></div>"#,
+            r#"<div style="text-align:center;padding:16px 0;font-size:12px;color:#92949c;line-height:1.6"><p style="margin:0 0 12px">This alert was generated automatically by Tracewise.<br>Manage alert preferences <a href="{}" style="color:#92949c">here</a>.</p><p style="margin:0">Influence which events are considered critical by adding additional<br>instructions to your signal's prompt in <a href="{}" style="color:#92949c">Signal settings</a>.</p></div>"#,
             html_escape(&manage),
             html_escape(&signal_settings),
         )
     } else {
         footer(
-            "This alert was generated automatically by Laminar.",
+            "This alert was generated automatically by Tracewise.",
             &manage,
             "Manage alert preferences",
         )
@@ -643,7 +643,7 @@ fn render_usage_warning_email(
         banner(workspace_name, "Usage warning", None),
         card,
         footer(
-            "This notification was generated automatically by Laminar.",
+            "This notification was generated automatically by Tracewise.",
             &link,
             "Manage warning thresholds"
         )
@@ -702,7 +702,7 @@ fn render_usage_hard_limit_email(
         banner(workspace_name, "Usage limit reached", Some(&subtitle)),
         card,
         footer(
-            "This notification was generated automatically by Laminar.",
+            "This notification was generated automatically by Tracewise.",
             &link,
             "Manage usage limits"
         )
@@ -1136,7 +1136,7 @@ mod tests {
 
         assert!(html.contains(&format!("?traceId={trace_id}&eventId={event_id}")));
         assert!(html.contains(
-            "This alert was generated automatically by Laminar.<br>Manage alert preferences"
+            "This alert was generated automatically by Tracewise.<br>Manage alert preferences"
         ));
         assert!(html.contains("Influence which events are considered critical by adding additional<br>instructions to your signal's prompt"));
         assert!(html.contains(&format!(

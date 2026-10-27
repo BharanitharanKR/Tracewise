@@ -7,7 +7,7 @@ import SharedEvaluation from "@/components/shared/evaluation/shared-evaluation";
 import { getEvaluationScoreNames } from "@/lib/actions/evaluation";
 import { getSharedEvaluation } from "@/lib/actions/shared/evaluation";
 import { SHARED_ACTOR } from "@/lib/actions/sql";
-import { ogImage } from "@/lib/metadata";
+import { ogImage, siteUrl } from "@/lib/metadata";
 
 const getCachedSharedEvaluation = cache((evaluationId: string) => getSharedEvaluation({ evaluationId }));
 
@@ -21,7 +21,7 @@ export const generateMetadata = async (props: { params: Promise<{ evaluationId: 
       return { title: "Shared Evaluation", robots: NOINDEX };
     }
     const title = `${shared.evaluation.name} - Shared Evaluation`;
-    const description = `View the shared evaluation "${shared.evaluation.name}" on Laminar.`;
+    const description = `View the shared evaluation "${shared.evaluation.name}" on Tracewise.`;
     return {
       title,
       description,
@@ -30,7 +30,7 @@ export const generateMetadata = async (props: { params: Promise<{ evaluationId: 
         title,
         description,
         type: "website",
-        url: `https://laminar.sh/shared/evals/${evaluationId}`,
+        url: `${siteUrl}/shared/evals/${evaluationId}`,
         images: [ogImage],
       },
       twitter: {

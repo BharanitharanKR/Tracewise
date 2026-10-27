@@ -103,7 +103,7 @@ export function ApprovalForm({ userEmail, rawUserCode, context, projects, worksp
     <Centered>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Authorize the Laminar CLI</CardTitle>
+          <CardTitle>Authorize the CLI</CardTitle>
           <CardDescription>
             Confirm this code matches the one shown in your terminal.
             <span className="block text-xs mt-1 text-muted-foreground/80">Signed in as {userEmail}</span>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 
-import logo from "@/assets/logo/laminar-wordmark.svg";
+import logo from "@/assets/logo/wordmark.svg";
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthProviderButtons } from "@/components/auth/auth-provider-buttons";
 import { track } from "@/lib/posthog";
@@ -21,7 +21,7 @@ const SignIn = ({ callbackUrl }: SignInProps) => {
   return (
     <div className="flex flex-1 flex-col h-full py-4 px-5 bg-surface-150">
       <Link href="/" className="block shrink-0 self-start">
-        <Image alt="Laminar logo" src={logo} className="w-25 h-auto" priority />
+        <Image alt="Tracewise logo" src={logo} className="w-25 h-auto" priority />
       </Link>
       <div className="flex flex-1 justify-center flex-col items-center relative rounded-lg">
         <span className="text-4xl font-medium font-sans-landing">Welcome Back</span>

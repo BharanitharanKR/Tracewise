@@ -17,7 +17,7 @@ test("invite follows the welcome layout with live workspace text and the real in
   assert.ok(!html.includes("welcome-banner-background"));
   assert.ok(!html.includes("background-image:"));
   assert.ok(html.includes(`src="cid:${LAMINAR_LOGO_CID}"`));
-  assert.match(html, /Join Example Workspace on Laminar!/);
+  assert.match(html, /Join Example Workspace on Tracewise!/);
   assert.match(html, /This invitation will expire in 7 days/);
   assert.match(html, /background-color:#fda476/);
   assert.match(html, /padding:14px 24px/);

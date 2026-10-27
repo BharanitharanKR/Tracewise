@@ -47,7 +47,7 @@ export default function TrialEndingEmail({
                     <tbody>
                       <tr>
                         <td style={{ lineHeight: 0 }}>
-                          <Img src={`cid:${LAMINAR_LOGO_CID}`} alt="Laminar" width="76" height="13" style={logo} />
+                          <Img src={`cid:${LAMINAR_LOGO_CID}`} alt="Tracewise" width="96" height="13" style={logo} />
                         </td>
                         <td style={identity}>/</td>
                         <td style={identity}>{workspaceName}</td>
@@ -122,7 +122,7 @@ const banner: CSSProperties = {
   borderRadius: "8px",
   backgroundColor: "#252526",
 };
-const logo: CSSProperties = { display: "block", width: "76px", height: "13px" };
+const logo: CSSProperties = { display: "block", width: "96px", height: "13px" };
 const identity: CSSProperties = {
   paddingLeft: "8px",
   color: "#c3c4c8",

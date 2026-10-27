@@ -34,8 +34,8 @@ const formatEmailDate = (date: Date) =>
   date.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
 
 const laminarLogoAttachment = async () => ({
-  content: await readFile(path.join(process.cwd(), "public", "laminar-logo-sm.png")),
-  filename: "laminar-logo-sm.png",
+  content: await readFile(path.join(process.cwd(), "public", "tracewise-logo-sm.png")),
+  filename: "tracewise-logo-sm.png",
   contentId: LAMINAR_LOGO_CID,
 });
 
@@ -49,7 +49,7 @@ interface InvoiceEmailArgs {
 // `projectId` is the project the user was onboarded into; the follow-up automation
 // (USER_ONBOARDED_EVENT) nudges them until that project receives its first trace.
 export async function sendWelcomeEmail(email: string, projectId: string) {
-  const from = "Robert from Laminar <robert@mail.lmnr.ai>";
+  const from = "Tracewise <founders@lmnr.ai>";
   const [workspace] = await db
     .select({ id: workspaces.id, trialEndsAt: workspaces.trialEndsAt })
     .from(projects)
@@ -59,7 +59,7 @@ export async function sendWelcomeEmail(email: string, projectId: string) {
   const trial = workspace?.trialEndsAt
     ? { endsOn: formatEmailDate(new Date(workspace.trialEndsAt)), addPaymentUrl: trialPaymentUrl(workspace.id) }
     : undefined;
-  const subject = trial ? "Welcome to Laminar! Your Starter trial has started" : "Welcome to Laminar!";
+  const subject = trial ? "Welcome to Tracewise! Your Starter trial has started" : "Welcome to Tracewise!";
 
   const { data, error } = await RESEND.emails.send({
     from,
@@ -85,8 +85,8 @@ export async function sendWelcomeEmail(email: string, projectId: string) {
 }
 
 export async function sendOnPaymentReceivedEmail({ email, workspaceId, total, date }: InvoiceEmailArgs) {
-  const from = "Laminar team <founders@lmnr.ai>";
-  const subject = `Laminar: Payment of ${total} received.`;
+  const from = "Tracewise <founders@lmnr.ai>";
+  const subject = `Tracewise: Payment of ${total} received.`;
   const component = SubscriptionUpdatedEmail({
     total,
     date,
@@ -106,8 +106,8 @@ export async function sendOnPaymentReceivedEmail({ email, workspaceId, total, da
 }
 
 export async function sendOnPaymentFailedEmail({ email, workspaceId, total, date }: InvoiceEmailArgs) {
-  const from = "Laminar team <founders@lmnr.ai>";
-  const subject = `Laminar: Payment of ${total} failed.`;
+  const from = "Tracewise <founders@lmnr.ai>";
+  const subject = `Tracewise: Payment of ${total} failed.`;
   const component = PaymentFailedEmail({
     total,
     date,
@@ -127,8 +127,8 @@ export async function sendOnPaymentFailedEmail({ email, workspaceId, total, date
 }
 
 export async function sendInvitationEmail(email: string, workspaceName: string, inviteLink: string) {
-  const from = "Robert from Laminar <robert@mail.lmnr.ai>";
-  const subject = `You are invited to join ${workspaceName} on Laminar`;
+  const from = "Tracewise <founders@lmnr.ai>";
+  const subject = `You are invited to join ${workspaceName} on Tracewise`;
 
   const { data, error } = await RESEND.emails.send({
     from,
@@ -156,9 +156,9 @@ export async function sendTrialEndingEmail({
 
   const endsOn = formatEmailDate(endsAt);
   const { error } = await RESEND.emails.send({
-    from: "Laminar team <founders@lmnr.ai>",
+    from: "Tracewise <founders@lmnr.ai>",
     to,
-    subject: `Your Laminar Starter trial for ${workspaceName} ends on ${endsOn}`,
+    subject: `Your Tracewise Starter trial for ${workspaceName} ends on ${endsOn}`,
     react: TrialEndingEmail({ workspaceName, endsOn, addPaymentUrl: trialPaymentUrl(workspaceId) }),
     attachments: [await laminarLogoAttachment()],
   });

@@ -3,7 +3,7 @@
 # It does not include RabbitMQ.
 # Run frontend manually with `ENVIRONMENT=LITE pnpm run dev`.
 
-name: lmnr
+name: tracewise
 
 services:
   postgres:

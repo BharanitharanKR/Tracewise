@@ -1,23 +1,7 @@
-# Contribute to Laminar
+# Contributing to Tracewise
 
-Thank you very much for showing interest in contributing to Laminar!
-
-## How to contribute
-
-If you want to contribute to Laminar, first check open and closed issues
-for any similar items. If you can find an existing issue, only add to it if you believe
-you have additional context that will help us locate and debug the issue. 
-
-If you want to contribute your code, ask in an open issue if it can be assigned to you.
-Then fork the repo, and develop locally. Once you are done with your change, submit a pull
-request through your fork. Our active development branch is `dev`, and we merge it into
-`main` periodically. Please submit your PRs to `dev`, and consider including `dev`
-when you fork the repo.
-
-### Contributor License Agreement
-
-When you open a pull request, CLA bot will ask you to sign our Contributor License Agreement (CLA).
-We do this to avoid legal issues and disputes, and to stay compliant with relevant IP laws.
+Tracewise is developed on the `main` branch. Open a pull request against `main` with a short
+description of the change and how you tested it.
 
 ## Why are there so many docker-compose files?
 
@@ -40,7 +24,7 @@ or for testing the changes after developing on your own and before opening a PR.
 | clickhouse | ✅ | ✅ | ✅ | ✅ | ✅ |
 | rabbitmq | ❌ | ✅ | ✅ | ❌ | ✅ |
 | app-server | ℹ️ | ✅ | 💻 | ℹ️ | 🔧 | 
-| frontend | ℹ️ | ✅ | 💻 | 💻 | 🔧 |
+| frontend | 🔧 | 🔧 | 💻 | 💻 | 🔧 |
 
 - ✅ – service present, image is pulled from a container registry.
 - 🔧 – service present, image is built from the source. This may take a while.
@@ -49,7 +33,7 @@ or for testing the changes after developing on your own and before opening a PR.
 - ❌ – service not present.
 
 
-## Running Laminar locally for development
+## Running Tracewise locally for development
 
 Use this guide if you are changing frontend code only.
 For making backend changes or changes across the full stack,
@@ -78,7 +62,7 @@ pnpm run dev
 Next.js is hot-reloadable in development mode, so any changes you make will be reflected
 immediately.
 
-## [Advanced] Running full stack locally for development
+## [Advanced] Running the full stack locally
 
 This guide is for when you are changing backend code, or when you want to run the full stack
 locally for development. If you only want to change frontend code, see the section above.

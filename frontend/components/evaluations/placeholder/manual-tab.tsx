@@ -45,7 +45,7 @@ export function ManualTab() {
   return (
     <div className="flex flex-col gap-12">
       <div className="flex flex-col gap-3 items-start">
-        <h3 className="text-base font-medium">Install Laminar SDK</h3>
+        <h3 className="text-base font-medium">Install the SDK</h3>
         <InstallTabsSection />
       </div>
 

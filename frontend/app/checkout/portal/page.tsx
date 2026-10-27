@@ -6,7 +6,7 @@ import { getWorkspaceSettingsPath } from "@/lib/actions/projects";
 import { getServerSession } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
-  title: "Billing portal - Laminar",
+  title: "Billing portal",
   description: "Redirecting to your Stripe billing portal.",
 };
 

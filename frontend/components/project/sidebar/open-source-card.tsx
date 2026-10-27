@@ -15,7 +15,7 @@ export default function OpenSourceCard() {
     <SidebarMenuItem>
       <div className="flex flex-col gap-1.5 rounded-lg bg-surface-200 p-2">
         <div className="flex items-start justify-between">
-          <p className="text-xs text-foreground-300">Laminar is open-source</p>
+          <p className="text-xs text-foreground-300">Tracewise is open-source</p>
           <button
             aria-label="Close"
             onClick={() => setShowStarCard(false)}
@@ -25,8 +25,8 @@ export default function OpenSourceCard() {
           </button>
         </div>
         <GitHubStarsButton
-          owner="lmnr-ai"
-          repo="lmnr"
+          owner="BharanitharanKR"
+          repo="Tracewise"
           className="h-6 w-full justify-center rounded bg-surface-400 px-1 [&_span]:text-foreground-200 [&_svg]:text-foreground-200"
         />
       </div>

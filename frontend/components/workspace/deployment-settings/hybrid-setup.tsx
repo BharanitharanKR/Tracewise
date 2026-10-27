@@ -94,7 +94,7 @@ const HybridSetup = ({ workspaceId, isSaving, isVerified, onVerifiedChange }: Hy
       <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
         <p className="text-sm font-medium">How hybrid deployment works</p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Your data is processed through Laminar Cloud, but we never store it. We route writes to services running in{" "}
+          Your data is processed through Tracewise Cloud, but we never store it. We route writes to services running in{" "}
           <strong>your</strong> infrastructure, which persist to a database in <strong>your</strong> cloud.
         </p>
         <div className="flex items-center gap-4 pt-1">
@@ -119,7 +119,7 @@ const HybridSetup = ({ workspaceId, isSaving, isVerified, onVerifiedChange }: Hy
             <div className="flex-1 min-w-0">
               <Label className="text-sm font-medium">Generate API keys</Label>
               <div className="text-xs text-muted-foreground mt-0.5">
-                This public key is used to generate a signed token that authenticates your data plane with Laminar.{" "}
+                This public key is used to generate a signed token that authenticates your data plane with Tracewise.{" "}
                 <br />
                 It will be used during the deployment of data plane services.
               </div>
@@ -150,7 +150,7 @@ const HybridSetup = ({ workspaceId, isSaving, isVerified, onVerifiedChange }: Hy
             <div className="flex-1 min-w-0">
               <Label className="text-sm font-medium">Verify deployment URL</Label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Enter your data plane URL and verify that Laminar can reach it.
+                Enter your data plane URL and verify that Tracewise can reach it.
               </p>
             </div>
           </div>

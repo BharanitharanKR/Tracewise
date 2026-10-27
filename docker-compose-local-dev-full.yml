@@ -1,7 +1,7 @@
 # This compose definition does not build Laminar images, it is intended for local development.
 # This file is meant to be used with running the Laminar services manually from each service's directory.
 # Refer to CONTRIBUTING.md for more information on how to run the services locally.
-name: lmnr
+name: tracewise
 
 services:
   rabbitmq:

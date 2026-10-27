@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { type ComponentProps, type PropsWithChildren, type ReactNode } from "react";
 
-import logo from "@/assets/logo/laminar-wordmark.svg";
+import logo from "@/assets/logo/wordmark.svg";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFeatureFlags } from "@/contexts/feature-flags-context.tsx";
@@ -61,7 +61,7 @@ export default function StepShell({
       <div className="relative w-full max-w-2xl xl:max-w-3xl 2xl:max-w-4xl flex flex-col gap-4 2xl:gap-8 md:h-[42rem] xl:h-[46rem] 2xl:h-[50rem] md:max-h-[calc(100svh-3rem)] lg:max-h-[calc(100svh-4rem)]">
         <div className="flex items-center justify-between gap-3 px-4 shrink-0">
           <Image
-            alt="Laminar logo"
+            alt="Tracewise logo"
             src={logo}
             className="w-[100px] lg:w-28 2xl:w-32 h-auto md:-translate-y-0.5"
             priority

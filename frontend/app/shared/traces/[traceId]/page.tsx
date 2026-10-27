@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PageViewTracker from "@/components/common/page-view-tracker";
 import TraceView from "@/components/shared/traces/trace-view";
 import { getSharedSpans } from "@/lib/actions/shared/spans";
+import { siteUrl } from "@/lib/metadata";
 
 import { getCachedSharedTrace, isValidTraceId } from "./shared-trace";
 
@@ -25,7 +26,7 @@ export const generateMetadata = async (props: { params: Promise<{ traceId: strin
     });
     const title = `Shared Trace - ${startTime}`;
     const typePart = trace.traceType ? `, ${trace.traceType} type` : "";
-    const description = `Trace with ${trace.totalTokens.toLocaleString()} tokens${typePart}. View the full trace on Laminar.`;
+    const description = `Trace with ${trace.totalTokens.toLocaleString()} tokens${typePart}. View the full trace on Tracewise.`;
     const ogImageUrl = `/shared/traces/${traceId}/opengraph-image`;
     return {
       title,
@@ -35,7 +36,7 @@ export const generateMetadata = async (props: { params: Promise<{ traceId: strin
         title,
         description,
         type: "website",
-        url: `https://laminar.sh/shared/traces/${traceId}`,
+        url: `${siteUrl}/shared/traces/${traceId}`,
         images: [
           {
             url: ogImageUrl,

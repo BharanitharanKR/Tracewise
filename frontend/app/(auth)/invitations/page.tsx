@@ -182,7 +182,7 @@ export default async function InvitationsPage(props: {
             <span className="text-xs text-muted-foreground/80">Signed in as {user.email}</span>
             <CardTitle>Join {workspace.name}</CardTitle>
             <CardDescription className="mt-1">
-              You&apos;ve been invited to collaborate on this workspace on Laminar.
+              You&apos;ve been invited to collaborate on this workspace on Tracewise.
             </CardDescription>
           </CardHeader>
           <CardContent>

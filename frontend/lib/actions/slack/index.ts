@@ -360,7 +360,7 @@ export async function sendTestSlackNotification(input: z.infer<typeof SendTestNo
     },
     {
       type: "markdown",
-      text: "*sample_key*:\nThis is a test notification from Laminar. Your alert is configured correctly.",
+      text: "*sample_key*:\nThis is a test notification from Tracewise. Your alert is configured correctly.",
     },
     {
       type: "actions",
@@ -372,7 +372,7 @@ export async function sendTestSlackNotification(input: z.infer<typeof SendTestNo
             text: "View Trace",
             emoji: true,
           },
-          url: "https://laminar.sh",
+          url: process.env.NEXT_PUBLIC_URL || "http://localhost:5667",
           action_id: "view_trace",
         },
       ],
@@ -398,7 +398,7 @@ export async function sendTestSlackNotification(input: z.infer<typeof SendTestNo
   if (!data.ok) {
     if (data.error === "not_in_channel") {
       throw new Error(
-        "The Laminar bot is not in this channel. For private channels, please invite the bot by typing /invite @Laminar in the channel, then try again."
+        "The Tracewise bot is not in this channel. For private channels, please invite the bot by typing /invite @Tracewise in the channel, then try again."
       );
     }
     throw new Error(`Failed to send test notification: ${data.error}`);

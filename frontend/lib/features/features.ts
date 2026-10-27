@@ -156,7 +156,9 @@ export const isFeatureEnabled = (feature: Feature): boolean => {
     // Anonymous self-hosted usage telemetry. Never runs on Laminar Cloud
     // (we have first-party analytics there), only on real self-hosted
     // deployments, and operators can always opt out.
-    if (process.env.LAMINAR_TELEMETRY_DISABLED === "true") {
+    // Tracewise: the heartbeat reports to the upstream Laminar PostHog project,
+    // so it is off unless LAMINAR_TELEMETRY_DISABLED is explicitly "false".
+    if (process.env.LAMINAR_TELEMETRY_DISABLED !== "false") {
       return false;
     }
     if (process.env.LAMINAR_CLOUD === "true") {

@@ -71,7 +71,7 @@ export default function ConnectStep({ stepIndex, totalSteps, onBack }: ConnectSt
       stepIndex={stepIndex}
       totalSteps={totalSteps}
       title="Send your first trace"
-      description="Copy and paste this prompt to your coding agent to integrate with Laminar."
+      description="Copy and paste this prompt to your coding agent to integrate with Tracewise."
       onBack={onBack}
       onNext={() => goToProject({ skipped: true })}
       nextLabel="Skip for now"

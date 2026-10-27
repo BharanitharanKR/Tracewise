@@ -1,6 +1,6 @@
 # This compose definition builds Laminar images locally. This is meant to be
 # run at the last step of local development as a check before pushing changes.
-name: lmnr
+name: tracewise
 
 services:
   rabbitmq:
@@ -143,7 +143,7 @@ services:
       SHARED_SECRET_TOKEN: ${SHARED_SECRET_TOKEN}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       ENVIRONMENT: FULL
-      LAMINAR_TELEMETRY_DISABLED: "${LAMINAR_TELEMETRY_DISABLED:-false}"
+      LAMINAR_TELEMETRY_DISABLED: "${LAMINAR_TELEMETRY_DISABLED:-true}"
       CLICKHOUSE_URL: http://clickhouse:8123
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}

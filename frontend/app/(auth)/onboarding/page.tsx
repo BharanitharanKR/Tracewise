@@ -19,7 +19,7 @@ import { orgDomainFromEmail } from "@/lib/email-domain";
 import { Feature, isFeatureEnabled } from "@/lib/features/features";
 
 export const metadata: Metadata = {
-  title: "Get Started - Laminar",
+  title: "Get Started",
   description: "Set up your workspace and start tracing your AI agents.",
 };
 
