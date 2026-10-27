@@ -1,0 +1,18 @@
+export const openAIThinkingModels = [
+  "o4-mini",
+  "o3",
+  "o3-mini",
+  "o1",
+  "o1-mini",
+  "o1-preview",
+  "gpt-5",
+  "gpt-5-mini",
+  "gpt-5-nano",
+  "gpt-5.1",
+  "gpt-5.2",
+  "gpt-5.4",
+  "gpt-5.4-mini",
+  "gpt-5.4-nano",
+  "gpt-5.5",
+  "gpt-5.6",
+] as const;

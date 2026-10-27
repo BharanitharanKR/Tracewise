@@ -1,0 +1,82 @@
+import { type Metadata } from "next";
+import { redirect } from "next/navigation";
+import Stripe from "stripe";
+
+import { getOrCreateStripeCustomer } from "@/lib/actions/checkout/customer";
+import { TIER_CONFIG } from "@/lib/actions/checkout/types";
+import { getWorkspaceSettingsPath } from "@/lib/actions/projects";
+import { getServerSession } from "@/lib/auth-session";
+
+export const metadata: Metadata = {
+  title: "Checkout - Laminar",
+  description: "Complete your Laminar subscription.",
+};
+
+export default async function CheckoutPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const lookupKey = (searchParams?.lookupKey as string) ?? TIER_CONFIG.hobby.lookupKey;
+  const workspaceId = searchParams?.workspaceId as string | undefined;
+  const workspaceName = searchParams?.workspaceName as string | undefined;
+  // Caller-controlled landing target. Onboarding returns through a route that confirms the
+  // session and applies the queued invites and signals; in-app upgrades go to billing.
+  const returnTo = searchParams?.returnTo as string | undefined;
+
+  // Session enforced by the (auth) layout; non-null here.
+  const userSession = (await getServerSession())!;
+
+  const s = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  const { customerId, userId } = await getOrCreateStripeCustomer(userSession.user.email!);
+
+  if (!userId) {
+    redirect(await getWorkspaceSettingsPath(workspaceId!, "billing"));
+  }
+
+  const billingSettingsPath = await getWorkspaceSettingsPath(workspaceId!, "billing");
+  // getWorkspaceSettingsPath can fall back to a query-less "/projects", so append the session id
+  // with the correct separator instead of assuming the path already has a "?".
+  const billingSeparator = billingSettingsPath.includes("?") ? "&" : "?";
+  const successUrl =
+    returnTo === "onboarding"
+      ? `${process.env.NEXT_PUBLIC_URL}/api/onboarding/checkout-return?sessionId={CHECKOUT_SESSION_ID}`
+      : `${process.env.NEXT_PUBLIC_URL}${billingSettingsPath}${billingSeparator}sessionId={CHECKOUT_SESSION_ID}`;
+  const cancelUrl =
+    returnTo === "onboarding"
+      ? `${process.env.NEXT_PUBLIC_URL}/onboarding`
+      : `${process.env.NEXT_PUBLIC_URL}${billingSettingsPath}`;
+
+  // Only send the flat plan price to checkout – overage prices are added
+  // server-side in the subscription.created webhook to avoid confusing
+  // line-item display on the Stripe checkout page.
+  const prices = await s.prices.list({
+    lookup_keys: [lookupKey],
+  });
+
+  const flatPrice = prices.data.find((p) => p.lookup_key === lookupKey);
+
+  const subscriptionMetadata = {
+    workspaceId: workspaceId!,
+    workspaceName: workspaceName!,
+    type: "workspace",
+  };
+
+  const session = await s.checkout.sessions.create({
+    customer: customerId,
+    line_items: [
+      {
+        price: flatPrice?.id,
+        quantity: 1,
+      },
+    ],
+    mode: "subscription",
+    subscription_data: {
+      metadata: subscriptionMetadata,
+    },
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    allow_promotion_codes: true,
+  });
+
+  redirect(session.url!);
+}

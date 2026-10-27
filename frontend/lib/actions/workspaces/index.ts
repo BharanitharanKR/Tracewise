@@ -1,0 +1,208 @@
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { z } from "zod/v4";
+
+import { createProject } from "@/lib/actions/projects";
+import { REPORT_TARGET_TYPE } from "@/lib/actions/reports/types";
+import { createSignal } from "@/lib/actions/signals";
+import { getServerSession } from "@/lib/auth-session";
+import { defaultReports } from "@/lib/db/default-charts.ts";
+import { DEFAULT_SIGNAL } from "@/lib/db/default-signals.ts";
+import { db } from "@/lib/db/drizzle";
+import {
+  membersOfWorkspaces,
+  reports,
+  reportTargets,
+  subscriptionTiers,
+  workspaceAddons,
+  workspaces,
+} from "@/lib/db/migrations/schema";
+import { Feature, isFeatureEnabled } from "@/lib/features/features";
+import { type Workspace, WorkspaceTier } from "@/lib/workspaces/types";
+
+export const CreateWorkspaceSchema = z.object({
+  name: z.string().min(1, "Workspace name is required"),
+  projectName: z.string().optional(),
+  isFirstProject: z.boolean().optional(),
+});
+
+type CreateWorkspaceResult = {
+  id: string;
+  name: string;
+  tierName: WorkspaceTier;
+  projectId?: string;
+};
+
+// Onboarding extras that belong to an account's very FIRST project: the default
+// Failure Detector signal and email targets on the workspace's default reports.
+// Split out of createWorkspace because a first project doesn't always arrive with
+// a fresh workspace — createWorkspace isn't transactional, so a create that fails
+// after the workspace insert leaves a workspace with no project behind, and the
+// retry has to seed these onto an existing workspace.
+export const seedFirstProject = async ({
+  workspaceId,
+  projectId,
+  userEmail,
+}: {
+  workspaceId: string;
+  projectId: string;
+  userEmail?: string | null;
+}): Promise<void> => {
+  // Route through createSignal so the default Failure Detector signal gets
+  // the same SIGNAL_EVENT alert + creator email target as a UI-created signal.
+  // With subscriptions a new workspace starts on Free, which has no Signals: paid
+  // onboarding creates them in its Signals step instead.
+  if (!isFeatureEnabled(Feature.SUBSCRIPTION))
+    await createSignal(
+      {
+        projectId,
+        name: DEFAULT_SIGNAL.name,
+        prompt: DEFAULT_SIGNAL.prompt,
+        structuredOutput: DEFAULT_SIGNAL.structuredOutputSchema,
+        subscriberEmail: userEmail ?? undefined,
+      },
+      { requireLlmProfile: false }
+    );
+
+  if (!userEmail) return;
+
+  // Re-read instead of taking ids from the caller: on the retry path the default
+  // reports were inserted by an earlier, half-failed request.
+  const workspaceReports = await db
+    .select({ id: reports.id })
+    .from(reports)
+    .where(eq(reports.workspaceId, workspaceId));
+  if (workspaceReports.length === 0) return;
+
+  // report_targets has no unique constraint, so dedupe here rather than re-mailing.
+  const existingTargets = await db
+    .select({ reportId: reportTargets.reportId })
+    .from(reportTargets)
+    .where(and(eq(reportTargets.workspaceId, workspaceId), eq(reportTargets.email, userEmail)));
+  const targeted = new Set(existingTargets.map((t) => t.reportId));
+  const untargeted = workspaceReports.filter((r) => !targeted.has(r.id));
+  if (untargeted.length === 0) return;
+
+  await db.insert(reportTargets).values(
+    untargeted.map((r) => ({
+      workspaceId,
+      reportId: r.id,
+      type: REPORT_TARGET_TYPE.EMAIL,
+      email: userEmail,
+    }))
+  );
+};
+
+export const createWorkspace = async (input: z.infer<typeof CreateWorkspaceSchema>): Promise<CreateWorkspaceResult> => {
+  const session = await getServerSession();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { name, projectName, isFirstProject } = CreateWorkspaceSchema.parse(input);
+  const userId = session.user.id;
+  const userEmail = session.user.email;
+
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({
+      name,
+      tierId: 1,
+    })
+    .returning({
+      id: workspaces.id,
+      name: workspaces.name,
+    });
+
+  if (!workspace) {
+    throw new Error("Failed to create workspace");
+  }
+
+  await db.insert(membersOfWorkspaces).values({
+    userId,
+    workspaceId: workspace.id,
+    memberRole: "owner",
+  });
+
+  await db.insert(reports).values(
+    defaultReports.map((r) => ({
+      workspaceId: workspace.id,
+      type: r.type,
+      weekdays: r.weekdays,
+      hour: r.hour,
+    }))
+  );
+
+  let projectId: string | undefined;
+
+  if (projectName) {
+    const project = await createProject({
+      name: projectName,
+      workspaceId: workspace.id,
+    });
+    projectId = project.id;
+
+    if (isFirstProject) {
+      await seedFirstProject({ workspaceId: workspace.id, projectId, userEmail });
+    }
+  }
+
+  return {
+    id: workspace.id,
+    name: workspace.name,
+    tierName: WorkspaceTier.FREE,
+    projectId,
+  };
+};
+
+export const getWorkspaces = async (): Promise<Workspace[]> => {
+  const session = await getServerSession();
+
+  if (!session?.user) {
+    throw new Error("Unauthorized: User not authenticated");
+  }
+
+  const results = await db
+    .select({
+      id: workspaces.id,
+      name: workspaces.name,
+      tierName: subscriptionTiers.name,
+    })
+    .from(workspaces)
+    .innerJoin(membersOfWorkspaces, eq(workspaces.id, membersOfWorkspaces.workspaceId))
+    .innerJoin(subscriptionTiers, eq(workspaces.tierId, subscriptionTiers.id))
+    .where(eq(membersOfWorkspaces.userId, session?.user?.id))
+    .orderBy(desc(workspaces.createdAt));
+
+  if (results.length === 0) {
+    return [];
+  }
+
+  let addons: { workspaceId: string; addonSlug: string }[] = [];
+
+  if (isFeatureEnabled(Feature.SUBSCRIPTION)) {
+    addons = await db
+      .select({ workspaceId: workspaceAddons.workspaceId, addonSlug: workspaceAddons.addonSlug })
+      .from(workspaceAddons)
+      .where(
+        inArray(
+          workspaceAddons.workspaceId,
+          results.map((r) => r.id)
+        )
+      );
+  }
+
+  const addonsByWorkspace = new Map<string, string[]>();
+  for (const addon of addons) {
+    const existing = addonsByWorkspace.get(addon.workspaceId) ?? [];
+    existing.push(addon.addonSlug);
+    addonsByWorkspace.set(addon.workspaceId, existing);
+  }
+
+  return results.map((r) => ({
+    id: r.id,
+    name: r.name,
+    tierName: r.tierName as WorkspaceTier,
+    addons: addonsByWorkspace.get(r.id) ?? [],
+  }));
+};

@@ -1,0 +1,277 @@
+import { Redis } from "ioredis";
+
+// Singleton Redis client
+const getRedisSingleton = (() => {
+  let client: Redis | null = null;
+
+  return () => {
+    if (!client) {
+      client = new Redis(process.env.REDIS_URL!, {
+        maxRetriesPerRequest: 3,
+        retryStrategy(times) {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+      });
+    }
+    return client;
+  };
+})();
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number | null;
+}
+
+interface RedisSetOptions {
+  expireAfterSeconds?: number;
+  expireAt?: Date;
+}
+
+export class CacheManager {
+  private redisClient: Redis | null = null;
+  private memoryCache: Map<string, CacheEntry<any>> = new Map();
+  private readonly useRedis: boolean;
+
+  constructor() {
+    this.useRedis = !!process.env.REDIS_URL;
+    // Initialize Redis client immediately if we're using Redis
+    if (this.useRedis) {
+      this.redisClient = getRedisSingleton();
+      this.redisClient.on("error", (err) => console.error("Redis Client Error", err));
+    }
+  }
+
+  private async getRedisClient(): Promise<Redis> {
+    if (!this.redisClient) {
+      this.redisClient = getRedisSingleton();
+    }
+    if (["reconnecting", "wait"].includes(this.redisClient.status)) {
+      await this.redisClient.connect();
+    }
+    return this.redisClient;
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      const value = await client.get(key);
+      try {
+        return value ? JSON.parse(value) : null;
+      } catch (e) {
+        console.error("Error parsing value from cache", e);
+        throw e;
+      }
+    } else {
+      const entry = this.memoryCache.get(key);
+      if (!entry) {
+        return null;
+      }
+      if (entry.expiresAt && entry.expiresAt < Date.now()) {
+        this.memoryCache.delete(key);
+        return null;
+      }
+      return entry.value;
+    }
+  }
+
+  async set<T>(key: string, value: T, options: RedisSetOptions = {}): Promise<void> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      const args: any[] = [];
+      if (options.expireAfterSeconds) {
+        args.push("EX", options.expireAfterSeconds);
+      }
+      if (options.expireAt) {
+        args.push("PXAT", options.expireAt.getTime());
+      }
+      try {
+        await client.set(key, JSON.stringify(value), ...args);
+      } catch (e) {
+        console.error("Error setting entry in cache", e);
+        throw e;
+      }
+    } else {
+      let expiresAt: number | null = null;
+      if (options.expireAfterSeconds) {
+        expiresAt = Date.now() + options.expireAfterSeconds * 1000;
+      } else if (options.expireAt) {
+        expiresAt = options.expireAt.getTime();
+      }
+      this.memoryCache.set(key, { value, expiresAt });
+    }
+  }
+
+  async remove(key: string): Promise<void> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      try {
+        await client.del(key);
+      } catch (e) {
+        console.error("Error deleting entry from cache", e);
+        throw e;
+      }
+    } else {
+      this.memoryCache.delete(key);
+    }
+  }
+
+  // Atomically reads a JSON entry and deletes it only when its `field` equals
+  // `value`. Returns the parsed value on a match (entry consumed), or null when
+  // the key is missing/expired OR the field does not match. A non-matching
+  // caller never consumes the entry, so a single-use token survives for its
+  // rightful owner while concurrent matching callers cannot both read it.
+  async getAndRemoveIfMatch<T>(key: string, field: string, value: string): Promise<T | null> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      // Lua runs server-side, so the GET + conditional DEL is one atomic step.
+      const script = `
+        local v = redis.call('GET', KEYS[1])
+        if not v then return nil end
+        local ok, payload = pcall(cjson.decode, v)
+        if ok and payload[ARGV[1]] == ARGV[2] then
+          redis.call('DEL', KEYS[1])
+          return v
+        end
+        return nil
+      `;
+      try {
+        const raw = (await client.eval(script, 1, key, field, value)) as string | null;
+        return raw ? (JSON.parse(raw) as T) : null;
+      } catch (e) {
+        console.error("Error in getAndRemoveIfMatch", e);
+        throw e;
+      }
+    } else {
+      // Single-process memory cache: get/check/delete is already atomic.
+      const entry = this.memoryCache.get(key);
+      if (!entry) {
+        return null;
+      }
+      if (entry.expiresAt && entry.expiresAt < Date.now()) {
+        this.memoryCache.delete(key);
+        return null;
+      }
+      if (entry.value && entry.value[field] === value) {
+        this.memoryCache.delete(key);
+        return entry.value;
+      }
+      return null;
+    }
+  }
+
+  async expire(key: string, seconds: number): Promise<boolean> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      try {
+        const result = await client.expire(key, seconds);
+        return result === 1;
+      } catch (e) {
+        console.error("Error setting expiry in cache", e);
+        return false;
+      }
+    } else {
+      const entry = this.memoryCache.get(key);
+      if (!entry) return false;
+      entry.expiresAt = Date.now() + seconds * 1000;
+      return true;
+    }
+  }
+
+  async zrange(key: string, start: number, stop: number): Promise<string[]> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      try {
+        return await client.zrange(key, start, String(stop));
+      } catch (e) {
+        console.error("Error getting zrange from cache", e);
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }
+
+  async zrangebylex(key: string, min: string, max: string, limit: number): Promise<string[]> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      try {
+        return await client.zrangebylex(key, min, max, "LIMIT", 0, limit);
+      } catch (e) {
+        console.error("Error getting zrangebylex from cache", e);
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }
+
+  async exists(key: string): Promise<boolean> {
+    if (this.useRedis) {
+      const client = await this.getRedisClient();
+      try {
+        const result = await client.exists(key);
+        return result === 1;
+      } catch (e) {
+        console.error("Error checking if key exists in cache", e);
+        return false;
+      }
+    } else {
+      const entry = this.memoryCache.get(key);
+      if (!entry) {
+        return false;
+      }
+      if (entry.expiresAt && entry.expiresAt < Date.now()) {
+        this.memoryCache.delete(key);
+        return false;
+      }
+      return true;
+    }
+  }
+}
+
+export const cache = new CacheManager();
+
+export const PROJECT_API_KEY_CACHE_KEY = "project_api_key";
+// Must stay in sync with `PROJECT_CACHE_KEY` in `app-server/src/cache/keys.rs`
+// — the frontend invalidates entries the Rust app-server fills, so a drift
+// would orphan Postgres writes from cache reads. The cached struct dropped its
+// old `signalStepsLimit` keys for the LAM-1757 cost fields without a serde
+// default, so any stale pre-rename entry fails to deserialize on the Rust side
+// and is repopulated from a fresh DB query — no key bump needed.
+export const PROJECT_CACHE_KEY = "project";
+export const WORKSPACE_BYTES_USAGE_CACHE_KEY = "workspace_bytes_usage";
+export const TRACE_CHATS_CACHE_KEY = "trace_chats";
+export const SIGNAL_TRIGGERS_CACHE_KEY = "signal_triggers";
+export const ALERT_FILTERS_CACHE_KEY = "alert_filters";
+export const SUMMARY_TRIGGER_SPANS_CACHE_KEY = "summary_trigger_spans";
+export const WORKSPACE_DEPLOYMENTS_CACHE_KEY = "workspace_deployment_config";
+export const WORKSPACE_DEPLOYMENTS_BY_WORKSPACE_CACHE_KEY = "workspace_deployment_config_by_ws";
+export const WORKSPACE_USAGE_WARNINGS_CACHE_KEY = "workspace_usage_warnings";
+// Must stay in sync with `HARD_LIMIT_NOTIFIED_CACHE_KEY` in `app-server/src/cache/keys.rs`
+export const HARD_LIMIT_NOTIFIED_CACHE_KEY = "hard_limit_notified";
+export const ONBOARDING_COMPANY_NAME_CACHE_KEY = "onboarding_company_name";
+
+export const WORKSPACE_MEMBER_CACHE_KEY = (workspaceId: string, userId: string) =>
+  `workspace_member:${workspaceId}:${userId}`;
+
+export const PROJECT_MEMBER_CACHE_KEY = (projectId: string, userId: string) => `project_member:${projectId}:${userId}`;
+// Must stay in sync with `PROJECT_MEMBERSHIP_CACHE_KEY` in `app-server/src/cache/keys.rs` (CLI user routes).
+export const CLI_PROJECT_MEMBERSHIP_CACHE_KEY = (userId: string, projectId: string) =>
+  `project_membership:${userId}:${projectId}`;
+
+// Must stay in sync with `MEMBER_ROLE_CACHE_KEY` in `app-server/src/cache/keys.rs`.
+// The app-server caches a member's role to derive its read policy; remove the
+// key whenever the role changes or the membership ends.
+export const MEMBER_ROLE_CACHE_KEY = (workspaceId: string, userId: string) => `member_role:${workspaceId}:${userId}`;
+
+export const AUTOCOMPLETE_CACHE_KEY = (resource: string, projectId: string, field: string): string =>
+  `autocomplete:${resource}:${projectId}:${field}`;
+
+export const SPAN_RENDERING_KEY_CACHE_KEY = (projectId: string, schemaFingerprint: string): string =>
+  `span_rendering_key:${projectId}:${schemaFingerprint}`;
+
+// App-wide (NOT project-scoped) LLM-inferred eval-score direction. The key is
+// the normalized score name; the value is a boolean isHigherBetter.
+export const SCORE_DIRECTION_CACHE_KEY = (normalizedScoreName: string): string =>
+  `score_direction:${normalizedScoreName}`;

@@ -1,0 +1,701 @@
+use std::collections::BTreeMap;
+use std::sync::Arc;
+
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+use crate::cache::{
+    Cache, CacheTrait,
+    keys::{ALERT_SEND_LOCK_KEY, HARD_LIMIT_SEND_LOCK_KEY, USAGE_WARNING_SEND_LOCK_KEY},
+};
+use crate::ch::notifications::CHNotification;
+use crate::ch::service::ClickhouseService;
+use crate::db::DB;
+use crate::env::notifications::ALERT_SEND_LOCK_TTL_SECONDS;
+use crate::mq::utils::mq_max_payload;
+use crate::mq::{MessageQueue, MessageQueueTrait};
+use crate::reports::NoteworthyEvent;
+use crate::worker::{HandlerError, MessageHandler};
+
+pub mod delivery;
+mod email;
+pub mod slack;
+mod utils;
+
+use delivery::{DeliveryTarget, NotificationDeliveryMessage, push_to_deliveries_queue};
+
+// ── Notifications queue (producers → notifications_consumer) ──
+
+pub const NOTIFICATIONS_EXCHANGE: &str = "notifications";
+pub const NOTIFICATIONS_QUEUE: &str = "notifications";
+pub const NOTIFICATIONS_ROUTING_KEY: &str = "notifications";
+
+// ── Shared types ──
+
+/// The delivery channel for a notification target, as stored in the database.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TargetType {
+    Email,
+    Slack,
+}
+
+impl std::str::FromStr for TargetType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "EMAIL" => Ok(Self::Email),
+            "SLACK" => Ok(Self::Slack),
+            other => Err(format!("unknown target type: {other}")),
+        }
+    }
+}
+
+impl std::fmt::Display for TargetType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Email => f.write_str("EMAIL"),
+            Self::Slack => f.write_str("SLACK"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum NotificationDefinitionType {
+    Alert,
+    Report,
+    UsageWarning,
+    UsageHardLimit,
+    SignalEmptyTrace,
+}
+
+impl std::fmt::Display for NotificationDefinitionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Alert => f.write_str("ALERT"),
+            Self::Report => f.write_str("REPORT"),
+            Self::UsageWarning => f.write_str("USAGE_WARNING"),
+            Self::UsageHardLimit => f.write_str("USAGE_HARD_LIMIT"),
+            Self::SignalEmptyTrace => f.write_str("SIGNAL_EMPTY_TRACE"),
+        }
+    }
+}
+
+/// Concrete alert types stored in `alerts.type`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AlertType {
+    SignalEvent,
+    NewCluster,
+}
+
+impl AlertType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::SignalEvent => "SIGNAL_EVENT",
+            Self::NewCluster => "NEW_CLUSTER",
+        }
+    }
+}
+
+impl std::str::FromStr for AlertType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "SIGNAL_EVENT" => Ok(Self::SignalEvent),
+            "NEW_CLUSTER" => Ok(Self::NewCluster),
+            other => Err(format!("unknown alert type: {other}")),
+        }
+    }
+}
+
+impl std::fmt::Display for AlertType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+// ── Notification kind: the core event data ──
+
+/// A representative signal event included in a new-cluster notification.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct ClusterExampleEvent {
+    pub name: String,
+    #[serde(default)]
+    pub summary: Option<String>,
+    pub severity: u8,
+    pub trace_id: Uuid,
+    /// Pre-formatted display timestamp (e.g. "Jul 05, 2026 14:02 UTC").
+    pub timestamp: String,
+}
+
+/// Core notification data produced by various subsystems.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum NotificationKind {
+    EventIdentification {
+        project_id: Uuid,
+        #[serde(default)]
+        project_name: String,
+        #[serde(default)]
+        signal_id: Uuid,
+        trace_id: Uuid,
+        #[serde(default)]
+        event_id: Option<Uuid>,
+        event_name: String,
+        severity: u8,
+        extracted_information: Option<serde_json::Value>,
+        #[serde(default)]
+        alert_name: String,
+    },
+    NewCluster {
+        project_id: Uuid,
+        #[serde(default)]
+        project_name: String,
+        signal_id: Uuid,
+        signal_name: String,
+        cluster_id: Uuid,
+        cluster_name: String,
+        num_signal_events: u32,
+        alert_name: String,
+        /// Pre-formatted first/last event timestamps; `None` when the cluster
+        /// has no linked events. `#[serde(default)]` keeps already-queued
+        /// legacy messages deserializable.
+        #[serde(default)]
+        first_seen: Option<String>,
+        #[serde(default)]
+        last_seen: Option<String>,
+        /// Event counts by severity: [info, warning, critical].
+        #[serde(default)]
+        severity_counts: [u64; 3],
+        /// Event counts in equal-width buckets from first_seen through last_seen.
+        #[serde(default)]
+        activity_buckets: Vec<u64>,
+        #[serde(default)]
+        example_events: Vec<ClusterExampleEvent>,
+    },
+    SignalsReport {
+        workspace_name: String,
+        project_id: Uuid,
+        project_name: String,
+        title: String,
+        period_label: String,
+        period_start: String,
+        period_end: String,
+        signal_event_counts: BTreeMap<String, u64>,
+        /// Per-signal chart and cluster data. Empty for legacy queued reports.
+        #[serde(default)]
+        signals: Vec<crate::reports::SignalReportData>,
+        ai_summary: String,
+        noteworthy_events: Vec<NoteworthyEvent>,
+    },
+    UsageWarning {
+        workspace_name: String,
+        usage_label: String,
+        formatted_limit: String,
+        usage_item: String,
+        /// True when `limit_value` equals the tier's included allowance for this
+        /// usage item (e.g. 3 GiB bytes on Hobby). Used by the email template to
+        /// switch between a generic threshold-reached message and tier-specific
+        /// copy about the included allowance being consumed.
+        #[serde(default)]
+        at_tier_included_allowance: bool,
+        /// Tier display name ("Free", "Hobby", "Pro", or "your" for unknown tiers).
+        /// Defaults to empty string only when the field is absent in a legacy queued
+        /// message (backward-compat via `#[serde(default)]`); the email template's
+        /// `is_empty()` guard handles that case.
+        #[serde(default)]
+        tier_display_name: String,
+        /// True when exceeding the included allowance for this item results in
+        /// metered overage billing (Hobby / Pro, but not Free / Other). When
+        /// true and `at_tier_included_allowance` is also true, the email tells
+        /// the customer they will now be billed pay-as-you-go.
+        #[serde(default)]
+        overage_billable: bool,
+    },
+    /// A workspace has hit a hard usage limit. Unlike `UsageWarning` (a soft
+    /// nudge), this means ingestion (bytes) or signal runs (signal_cost) are now
+    /// BLOCKED. Monthly data/custom limits resume after reset; a depleted
+    /// one-time Signals credit requires an upgrade instead.
+    UsageHardLimit {
+        workspace_name: String,
+        usage_label: String,
+        formatted_limit: String,
+        usage_item: String,
+        #[serde(default)]
+        one_time_credit_exhausted: bool,
+    },
+    /// A signal skipped a trace that had no LLM content to evaluate. Sent to
+    /// workspace owners once per signal, so setup problems surface without
+    /// becoming noise.
+    SignalEmptyTrace {
+        project_id: Uuid,
+        project_name: String,
+        signal_id: Uuid,
+        signal_name: String,
+        trace_id: Uuid,
+    },
+}
+
+// ── NotificationMessage (producers → notifications queue) ──
+
+/// Message pushed to the `notifications` queue by producers (reports generator,
+/// signal processor, usage limits checker).
+///
+/// Contains a list of notification events sharing the same definition. All notifications from
+/// the message are delivered together.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NotificationMessage {
+    pub definition_type: NotificationDefinitionType,
+    pub definition_id: Uuid,
+    pub workspace_id: Uuid,
+    /// Optional project scope. Set for alerts and per-project report notifications.
+    /// `None` for workspace-level notifications (usage warnings, multi-project reports).
+    pub project_id: Option<Uuid>,
+    pub notifications: Vec<NotificationKind>,
+}
+
+/// Push a notification message to the notifications queue.
+pub async fn push_to_notification_queue(
+    message: NotificationMessage,
+    queue: Arc<MessageQueue>,
+) -> anyhow::Result<()> {
+    let serialized = serde_json::to_vec(&message)?;
+
+    queue
+        .publish(
+            &serialized,
+            NOTIFICATIONS_EXCHANGE,
+            NOTIFICATIONS_ROUTING_KEY,
+            None,
+        )
+        .await?;
+
+    log::debug!(
+        "Pushed notification message to queue: workspace_id={}, definition_type={}, count={}",
+        message.workspace_id,
+        message.definition_type,
+        message.notifications.len(),
+    );
+
+    Ok(())
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// notifications_consumer — stage 1: persist notifications + fan-out to targets
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// How long the per-warning / per-hard-limit dedup lock is held.
+/// This prevents concurrent ingestion workers from enqueuing duplicate
+/// usage notifications for the same definition before the DB `last_notified_at`
+/// stamp takes effect.
+const USAGE_WARNING_SEND_LOCK_TTL_SECONDS: u64 = 300; // 5 minutes
+
+/// Send lock `(key, ttl_seconds)` for a notification message, or `None` if the
+/// message needs no send lock. While the lock is held, further messages with
+/// the same key are dropped.
+///
+/// - Usage warnings key on `definition_id` (the warning row); hard limits share
+///   `definition_id` (= workspace_id) across usage items, so they additionally
+///   key on the usage item to keep the bytes and signal-cost notifications from
+///   suppressing one another.
+/// - Signal-event alerts key on `definition_id` (the alert) to throttle a noisy
+///   signal to one notification per alert per TTL. New-cluster alerts are
+///   already rare and digested, so they are not throttled.
+fn send_lock(message: &NotificationMessage) -> Option<(String, u64)> {
+    match message.definition_type {
+        NotificationDefinitionType::UsageWarning => Some((
+            format!("{}:{}", USAGE_WARNING_SEND_LOCK_KEY, message.definition_id),
+            USAGE_WARNING_SEND_LOCK_TTL_SECONDS,
+        )),
+        NotificationDefinitionType::UsageHardLimit => {
+            let usage_item = message.notifications.iter().find_map(|kind| match kind {
+                NotificationKind::UsageHardLimit { usage_item, .. } => Some(usage_item.as_str()),
+                _ => None,
+            })?;
+            Some((
+                format!(
+                    "{}:{}:{}",
+                    HARD_LIMIT_SEND_LOCK_KEY, message.definition_id, usage_item
+                ),
+                USAGE_WARNING_SEND_LOCK_TTL_SECONDS,
+            ))
+        }
+        NotificationDefinitionType::Alert
+            if message
+                .notifications
+                .iter()
+                .any(|kind| matches!(kind, NotificationKind::EventIdentification { .. })) =>
+        {
+            Some((
+                format!("{}:{}", ALERT_SEND_LOCK_KEY, message.definition_id),
+                // Redis rejects `SET … EX 0`.
+                ALERT_SEND_LOCK_TTL_SECONDS.get().max(1),
+            ))
+        }
+        _ => None,
+    }
+}
+
+pub struct NotificationHandler {
+    pub db: Arc<DB>,
+    pub cache: Arc<Cache>,
+    pub queue: Arc<MessageQueue>,
+    pub ch_service: Arc<ClickhouseService>,
+}
+
+impl NotificationHandler {
+    pub fn new(
+        db: Arc<DB>,
+        cache: Arc<Cache>,
+        queue: Arc<MessageQueue>,
+        ch_service: Arc<ClickhouseService>,
+    ) -> Self {
+        Self {
+            db,
+            cache,
+            queue,
+            ch_service,
+        }
+    }
+}
+
+#[async_trait]
+impl MessageHandler for NotificationHandler {
+    type Message = NotificationMessage;
+
+    async fn handle(&self, message: Self::Message) -> Result<(), HandlerError> {
+        // Usage notifications: multiple ingestion workers can race through
+        // check_soft_limits / check_notify_hard_limit and enqueue duplicate
+        // NotificationMessages before the DB last_notified_at stamp takes effect.
+        // Signal-event alerts: a noisy signal would otherwise send one
+        // notification per matching event.
+        let send_lock = send_lock(&message);
+        if let Some((lock_key, ttl_seconds)) = &send_lock {
+            match self.cache.try_acquire_lock(lock_key, *ttl_seconds).await {
+                Ok(true) => {} // Lock acquired – proceed.
+                Ok(false) => {
+                    log::debug!(
+                        "[Notifications] Send lock held for [{}], skipping",
+                        lock_key
+                    );
+                    return Ok(());
+                }
+                Err(e) => {
+                    return Err(HandlerError::Transient(anyhow::anyhow!(
+                        "Cache error acquiring notification send lock: {}",
+                        e
+                    )));
+                }
+            }
+        }
+
+        let now_ms = chrono::Utc::now().timestamp_millis();
+        // 1. Persist each notification event to ClickHouse `notifications` table.
+        let mut notification_ids = Vec::with_capacity(message.notifications.len());
+        let mut ch_notifications = Vec::with_capacity(message.notifications.len());
+
+        for kind in &message.notifications {
+            let notification_id = Uuid::new_v4();
+            notification_ids.push(notification_id);
+
+            let project_id = match kind {
+                NotificationKind::EventIdentification { project_id, .. } => *project_id,
+                NotificationKind::NewCluster { project_id, .. } => *project_id,
+                NotificationKind::SignalsReport { project_id, .. } => *project_id,
+                NotificationKind::SignalEmptyTrace { project_id, .. } => *project_id,
+                NotificationKind::UsageWarning { .. } => Uuid::nil(),
+                NotificationKind::UsageHardLimit { .. } => Uuid::nil(),
+            };
+
+            let payload = serde_json::to_string(kind).map_err(|e| {
+                HandlerError::permanent(anyhow::anyhow!(
+                    "Failed to serialize notification_kind: {}",
+                    e
+                ))
+            })?;
+
+            ch_notifications.push(CHNotification {
+                notification_id,
+                project_id,
+                workspace_id: message.workspace_id,
+                definition_type: message.definition_type.to_string(),
+                definition_id: message.definition_id,
+                payload,
+                created_at: now_ms,
+            });
+        }
+
+        if !ch_notifications.is_empty() {
+            if let Err(e) = self
+                .ch_service
+                .insert_batch_for_workspace(message.workspace_id, &ch_notifications)
+                .await
+            {
+                log::error!(
+                    "[Notifications] Failed to insert {} notifications to CH: {:?}",
+                    ch_notifications.len(),
+                    e
+                );
+                // Non-fatal: continue with delivery fan-out. Blocking delivery on CH
+                // availability would be worse than having unmatched IDs in logs.
+            }
+        }
+
+        // 2. Fetch targets based on definition_type.
+        let targets = match self.fetch_targets(&message).await {
+            Ok(targets) => targets,
+            Err(e) => {
+                // Same as a total fan-out failure below: free the lock for the retry.
+                if let Some((lock_key, _)) = &send_lock {
+                    let _ = self.cache.release_lock(lock_key).await;
+                }
+                return Err(e);
+            }
+        };
+
+        if targets.is_empty() {
+            log::info!(
+                "[Notifications] No targets for definition_type={}, definition_id={}",
+                message.definition_type,
+                message.definition_id,
+            );
+            return Ok(());
+        }
+
+        // 3. Fan-out: publish a delivery message per target with the full list of notifications.
+        let mut failures = 0;
+        let total = targets.len();
+
+        for target in targets {
+            let delivery = NotificationDeliveryMessage {
+                workspace_id: message.workspace_id,
+                project_id: message.project_id,
+                target,
+                notification_ids: notification_ids.clone(),
+                notifications: message.notifications.clone(),
+            };
+
+            let serialized_size = match serde_json::to_vec(&delivery) {
+                Ok(v) => v.len(),
+                Err(e) => {
+                    failures += 1;
+                    log::error!(
+                        "[Notifications] Failed to serialize delivery message: {:?}, target: {:?}",
+                        e,
+                        delivery.target,
+                    );
+                    continue;
+                }
+            };
+            if serialized_size >= mq_max_payload() {
+                failures += 1;
+                log::error!(
+                    "[Notifications] MQ payload limit exceeded for delivery message. \
+                     payload size: [{}], target: {:?}",
+                    serialized_size,
+                    delivery.target,
+                );
+                continue;
+            }
+
+            if let Err(e) = push_to_deliveries_queue(delivery, self.queue.clone()).await {
+                failures += 1;
+                log::error!("[Notifications] Failed to push delivery message: {:?}", e);
+            }
+        }
+
+        if failures == total {
+            // Release the send lock so the requeued message can re-acquire it on
+            // retry. Without this, the lock's TTL would cause the retry to
+            // silently skip, permanently losing the notification.
+            if let Some((lock_key, _)) = &send_lock {
+                let _ = self.cache.release_lock(lock_key).await;
+            }
+            return Err(HandlerError::transient(anyhow::anyhow!(
+                "Failed to push all {} delivery messages for definition {}",
+                total,
+                message.definition_id,
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+impl NotificationHandler {
+    /// Fetch delivery targets based on the notification definition type.
+    async fn fetch_targets(
+        &self,
+        message: &NotificationMessage,
+    ) -> Result<Vec<DeliveryTarget>, HandlerError> {
+        match message.definition_type {
+            NotificationDefinitionType::Alert => {
+                let project_id = message.project_id.ok_or_else(|| {
+                    HandlerError::permanent(anyhow::anyhow!(
+                        "Alert notification must have project_id, definition_id={}",
+                        message.definition_id,
+                    ))
+                })?;
+
+                let targets = crate::db::alert_targets::get_targets_for_alert(
+                    &self.db.pool,
+                    &message.definition_id,
+                    &project_id,
+                )
+                .await
+                .map_err(|e| HandlerError::transient(e))?;
+
+                Ok(targets
+                    .into_iter()
+                    .filter_map(|t| {
+                        let target_type = t.r#type.parse::<TargetType>().ok()?;
+                        Some(DeliveryTarget {
+                            target_id: t.id,
+                            target_type,
+                            email: t.email,
+                            channel_id: t.channel_id,
+                            integration_id: t.integration_id,
+                        })
+                    })
+                    .collect())
+            }
+            NotificationDefinitionType::Report => {
+                let targets = crate::db::reports::get_report_targets(
+                    &self.db.pool,
+                    &message.definition_id,
+                    &message.workspace_id,
+                )
+                .await
+                .map_err(|e| HandlerError::transient(e))?;
+
+                Ok(targets
+                    .into_iter()
+                    .filter_map(|t| {
+                        let target_type = t.r#type.parse::<TargetType>().ok()?;
+                        Some(DeliveryTarget {
+                            target_id: t.id,
+                            target_type,
+                            email: t.email,
+                            channel_id: t.channel_id,
+                            integration_id: t.integration_id,
+                        })
+                    })
+                    .collect())
+            }
+            NotificationDefinitionType::UsageWarning
+            | NotificationDefinitionType::UsageHardLimit
+            | NotificationDefinitionType::SignalEmptyTrace => {
+                // Usage and empty-trace warnings have no configured targets: they go to
+                // workspace owners via email.
+                let owner_emails = crate::db::usage_warnings::get_workspace_owner_emails(
+                    &self.db.pool,
+                    message.workspace_id,
+                )
+                .await
+                .map_err(|e| HandlerError::transient(e))?;
+
+                Ok(owner_emails
+                    .into_iter()
+                    .map(|email| DeliveryTarget {
+                        target_id: Uuid::nil(),
+                        target_type: TargetType::Email,
+                        email: Some(email),
+                        channel_id: None,
+                        integration_id: None,
+                    })
+                    .collect())
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn message(
+        definition_type: NotificationDefinitionType,
+        notifications: Vec<NotificationKind>,
+    ) -> NotificationMessage {
+        NotificationMessage {
+            definition_type,
+            definition_id: Uuid::from_u128(1),
+            workspace_id: Uuid::from_u128(2),
+            project_id: Some(Uuid::from_u128(3)),
+            notifications,
+        }
+    }
+
+    fn event() -> NotificationKind {
+        NotificationKind::EventIdentification {
+            project_id: Uuid::from_u128(3),
+            project_name: String::new(),
+            signal_id: Uuid::from_u128(4),
+            trace_id: Uuid::from_u128(5),
+            event_id: None,
+            event_name: "event".to_string(),
+            severity: 2,
+            extracted_information: None,
+            alert_name: "alert".to_string(),
+        }
+    }
+
+    fn cluster() -> NotificationKind {
+        NotificationKind::NewCluster {
+            project_id: Uuid::from_u128(3),
+            project_name: String::new(),
+            signal_id: Uuid::from_u128(4),
+            signal_name: "signal".to_string(),
+            cluster_id: Uuid::from_u128(6),
+            cluster_name: "cluster".to_string(),
+            num_signal_events: 1,
+            alert_name: "alert".to_string(),
+            first_seen: None,
+            last_seen: None,
+            severity_counts: [0; 3],
+            activity_buckets: Vec::new(),
+            example_events: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn signal_event_alerts_lock_per_alert() {
+        let (key, ttl_seconds) =
+            send_lock(&message(NotificationDefinitionType::Alert, vec![event()])).unwrap();
+        assert_eq!(
+            key,
+            format!("{}:{}", ALERT_SEND_LOCK_KEY, Uuid::from_u128(1))
+        );
+        assert_eq!(ttl_seconds, ALERT_SEND_LOCK_TTL_SECONDS.get().max(1));
+    }
+
+    #[test]
+    fn new_cluster_alerts_are_not_throttled() {
+        assert!(send_lock(&message(NotificationDefinitionType::Alert, vec![cluster()])).is_none());
+    }
+
+    #[test]
+    fn reports_and_empty_trace_warnings_have_no_send_lock() {
+        assert!(send_lock(&message(NotificationDefinitionType::Report, vec![])).is_none());
+        assert!(
+            send_lock(&message(
+                NotificationDefinitionType::SignalEmptyTrace,
+                vec![]
+            ))
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn usage_warnings_keep_their_lock() {
+        let (key, ttl_seconds) =
+            send_lock(&message(NotificationDefinitionType::UsageWarning, vec![])).unwrap();
+        assert_eq!(
+            key,
+            format!("{}:{}", USAGE_WARNING_SEND_LOCK_KEY, Uuid::from_u128(1))
+        );
+        assert_eq!(ttl_seconds, USAGE_WARNING_SEND_LOCK_TTL_SECONDS);
+    }
+}

@@ -1,0 +1,91 @@
+FROM node:26-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install dependencies based on the preferred package manager
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* ./
+# Keep in sync with .github/workflows/fe-build-check.yml.
+RUN npm i -g pnpm@12.8.1
+RUN pnpm i --frozen-lockfile
+
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Version baked in at build time.
+ARG NEXT_PUBLIC_APP_VERSION
+ENV NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION
+
+# Commit SHA used by Next.js for deployment skew protection.
+ARG NEXT_DEPLOYMENT_ID
+ENV NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID
+
+# Sub-path the app is served under (e.g. /lmnr), baked into next.config.ts at
+# build time. Empty => root-served. The frontend-ee-basepath image sets /lmnr.
+ARG NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the build.
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN npm run build
+
+# sharp 0.35 dropped `lib/index.js`, so @vercel/nft's hardcoded sharp special case
+# no longer fires; libvips reaches .next/standalone only via sharp's own
+# `require.resolve('@img/sharp-libvips-*/binary')` breadcrumb. Fail the build here
+# rather than 500 on the first next/image or /api/cluster-swatch request.
+RUN find .next/standalone -name 'libvips-cpp.so.*' | grep -q . \
+  || (echo "libvips missing from standalone trace - sharp would fail at runtime" && exit 1)
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# The runner starts with `node server.js` and never calls npm/npx; drop the npm CLI
+# bundled with the Node image so its dependencies don't ship in the final image.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+COPY --from=builder --chown=nextjs:nodejs /app/lib/db/migrations ./lib/db/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/lib/clickhouse/migrations ./lib/clickhouse/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/lib/quickwit/indexes ./lib/quickwit/indexes
+
+USER nextjs
+
+EXPOSE 3000
+
+# This is used at runtime as well
+ARG NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+
+ENV PORT=3000
+# set hostname to localhost
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
